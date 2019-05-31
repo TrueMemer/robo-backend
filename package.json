@@ -30,6 +30,7 @@
       "tsc": "tsc",
       "start": "ts-node src/index.ts",
       "prod": "tsc && node ./build/index.js",
-      "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run"
+      "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run",
+      "migration:revert": "ts-node ./node_modules/typeorm/cli.js migration:revert"
    }
 }

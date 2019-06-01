@@ -2,7 +2,12 @@ import { Request, Response } from "express";
 import { getRepository } from "typeorm";
 import { validate } from "class-validator";
 
-import { User } from "../entity/User";
+import { User, UserRole } from "../entity/User";
+import { VerificationToken } from "../entity/VerificationToken";
+
+import * as crypto from "crypto";
+import * as nodemailer from "nodemailer";
+import config from "../config/config";
 
 class UserController{
 
@@ -43,7 +48,8 @@ static newUser = async (req: Request, res: Response) => {
   user.username = username;
   user.password = password;
   user.email = email;
-  user.role = 'USER';
+  user.role = UserRole.USER;
+  user.isVerified = false;
 
   //Validade if the parameters are ok
   const errors = await validate(user);
@@ -58,14 +64,88 @@ static newUser = async (req: Request, res: Response) => {
   //Try to save. If fails, the username is already in use
   const userRepository = getRepository(User);
   try {
-    await userRepository.save(user);
+    user = await userRepository.save(user);
   } catch (e) {
     res.status(409).send("username already in use");
     return;
   }
 
+  const tokenRepository = getRepository(VerificationToken);
+
+  let token = new VerificationToken();
+  token.userId = user.id;
+  token.token = crypto.randomBytes(16).toString("hex");
+
+  try {
+    token = await tokenRepository.save(token);
+  }
+  catch(error) {
+    console.log(error);
+    res.status(500).send();
+    return;
+  }
+
+  let transporter = nodemailer.createTransport({
+    service: config.mail.service,
+    auth: {
+      user: config.mail.username,
+      pass: config.mail.password
+    }
+  });
+  var mailOptions = { from: 'robofxtrading19@gmail.com', to: user.email, subject: 'Account Verification Token', text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp://' + req.headers.host + '/user/confirmation?email=' + user.email + '&token=' + token.token + '.\n' };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  }
+  catch(error) {
+    console.error(error);
+    res.status(500).send("Failed to send confirmation email. Please contact administrator.");
+    return;
+  }
+  
   //If all ok, send 201 response
-  res.status(201).send("User created");
+  res.status(201).send("A verification email has been sent to " + user.email + ".");
+};
+
+static confirmEmail = async (req: Request, res: Response) => {
+  const token = req.query.token;
+
+  let t: VerificationToken;
+
+  try {
+    t = <VerificationToken>await getRepository(VerificationToken).findOneOrFail({ token: token })
+  }
+  catch(error) {
+    res.status(400).send("Failed to find token");
+    return;
+  }
+
+  let user: User;
+
+  try {
+    user = await getRepository(User).findOneOrFail(t.userId);
+  }
+  catch(error) {
+    res.status(400).send();
+    return;
+  }
+
+  if (user.isVerified) {
+    res.status(400).send("User is already verified!");
+    return;
+  }
+
+  user.isVerified = true;
+  try {
+    await getRepository(User).save(user);
+  }
+  catch(error) {
+    res.status(500).send("Failed to verify user. Please contact administrator.");
+    return;
+  }
+
+  res.status(200).send("Successfully verified!");
+
 };
 
 static editUser = async (req: Request, res: Response) => {
@@ -122,7 +202,7 @@ static deleteUser = async (req: Request, res: Response) => {
 
   //After all send a 204 (no content, but accepted) response
   res.status(204).send();
-};
+  };
 };
 
 export default UserController;

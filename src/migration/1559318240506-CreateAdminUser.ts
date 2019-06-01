@@ -1,5 +1,5 @@
 import {MigrationInterface, QueryRunner, getRepository} from "typeorm";
-import { User } from "../entity/User";
+import { User, UserRole } from "../entity/User";
 
 export class CreateAdminUser1559318240506 implements MigrationInterface {
 
@@ -8,13 +8,16 @@ export class CreateAdminUser1559318240506 implements MigrationInterface {
         user.username = "admin";
         user.password = "admin";
         user.email = "admin@test.ru";
+        user.isVerified = true;
         user.hashPassword();
-        user.role = "ADMIN";
+        user.role = UserRole.ADMIN;
         const userRepository = getRepository(User);
         await userRepository.save(user);
     }
 
     public async down(queryRunner: QueryRunner): Promise<any> {
+        const userRepository = getRepository(User);
+        userRepository.delete({ username: "admin" });
     }
 
 }

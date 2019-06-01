@@ -32,4 +32,6 @@ router.delete(
   UserController.deleteUser
 );
 
+router.get("/confirmation", UserController.confirmEmail);
+
 export default router;

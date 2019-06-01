@@ -17,13 +17,18 @@ class AuthController {
     const userRepository = getRepository(User);
     let user: User;
     try {
-      user = await userRepository.findOneOrFail({ where: { username } });
+      user = await userRepository.findOneOrFail({ where: { username }, select: ["id", "username", "password", "isVerified"] });
     } catch (error) {
       res.status(401).send();
     }
 
     if (!user.checkIfUnencryptedPasswordIsValid(password)) {
       res.status(401).send();
+      return;
+    }
+
+    if (!user.isVerified) {
+      res.status(401).send("Email is not verified!");
       return;
     }
 
@@ -47,7 +52,7 @@ class AuthController {
     const userRepository = getRepository(User);
     let user: User;
     try {
-      user = await userRepository.findOneOrFail(id);
+      user = await userRepository.findOneOrFail(id, { select: ["id", "username", "password"] });
     } catch (id) {
       res.status(401).send();
     }

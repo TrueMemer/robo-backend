@@ -3,6 +3,11 @@ import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, Updat
 import { Length, IsNotEmpty, IsEmail } from "class-validator";
 import * as bcrypt from 'bcryptjs';
 
+export enum UserRole {
+    ADMIN = "ADMIN",
+    USER = "USER"
+}
+
 @Entity()
 @Unique(["username", "email"])
 export class User {
@@ -14,7 +19,7 @@ export class User {
     @Length(4, 20)
     username: string;
 
-    @Column()
+    @Column({ select: false })
     @Length(4, 128)
     password: string;
 
@@ -22,9 +27,16 @@ export class User {
     @IsEmail()
     email: string;
 
-    @Column()
+    @Column({ default: false })
+    isVerified: boolean;
+
+    @Column({
+        type: "enum",
+        enum: UserRole,
+        default: UserRole.USER
+    })
     @IsNotEmpty()
-    role: string;
+    role: UserRole;
 
     @Column()
     @CreateDateColumn()

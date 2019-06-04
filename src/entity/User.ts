@@ -9,7 +9,8 @@ export enum UserRole {
 }
 
 @Entity()
-@Unique(["username", "email"])
+@Unique(["username"])
+@Unique(["email"])
 export class User {
 
     @PrimaryGeneratedColumn()

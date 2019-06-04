@@ -9,6 +9,7 @@ export class CreateAdminUser1559318240506 implements MigrationInterface {
         user.password = "admin";
         user.email = "admin@test.ru";
         user.isVerified = true;
+        user.balance = 0;
         user.hashPassword();
         user.role = UserRole.ADMIN;
         const userRepository = getRepository(User);

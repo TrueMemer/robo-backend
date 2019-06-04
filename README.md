@@ -67,3 +67,71 @@
 ---
 
 `GET /profile` - возвращает профиль текущего пользователя.
+
+---
+
+`GET /profile/addBalanceHistory` - возвращает список транзакций пополнения для текущего пользователяю
+
+---
+
+`POST /payment/crypto/createPayment` - создает транзацию пополнения с заданными параметрами для текущего пользователя.
+
+Пример тела:
+
+```json
+{ "currency": "litecoin", "amount_usd": 1 }
+```
+
+Пример ответа:
+
+```json
+{
+    "user_id": 1,
+    "currency": "litecoin",
+    "amount_usd": 1,
+    "amount_currency": 0.0096237, // эквивалент указанной суммы в указанной криптовалюте
+    "dateCreated": "2019-06-04T16:39:24.793Z",
+    "receive_address": "2NEoQoUsgLinccpJdRrh6E1roCkTeNc5UYm", // адрес, куда нужно переводить
+    "type": 1,
+    "dateDone": null,
+    "id": "e6efc94f-15c0-4f0b-bcf2-ab613b39cc9a", // уникальный ид транзации
+    "status": 2 // статус сделки, возможные варианты смотри в модели CryptoTransaction
+}
+```
+
+---
+
+`POST /payment/crypto/checkPayment` - проверка статуса транзакции пополнения.
+
+Пример:
+
+```json
+{
+	"uuid": "e6efc94f-15c0-4f0b-bcf2-ab613b39cc9a"
+}
+```
+
+Ответ:
+
+```json
+{
+    "id": "e6efc94f-15c0-4f0b-bcf2-ab613b39cc9a",
+    "user_id": 1,
+    "currency": "litecoin_testnet",
+    "type": 1,
+    "amount_usd": 1,
+    "amount_currency": 0.0096237,
+    "receive_address": "2NEoQoUsgLinccpJdRrh6E1roCkTeNc5UYm",
+    "status": 0, // сделка прошла успешно
+    "dateCreated": "2019-06-04T16:39:24.793Z",
+    "dateDone": "2019-06-04T16:40:08.613Z" // дата закрытия
+}
+```
+
+`POST /payment/crypto/cancelPendingPayment` - отмена ожидающей транзакции пополнения.
+
+Пример:
+
+```json
+{ "uuid": "5cdec60c-12c8-4ea2-b98a-2c20d1c4ebec" } // => 200
+```

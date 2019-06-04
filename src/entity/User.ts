@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, Double } from "typeorm";
 
 import { Length, IsNotEmpty, IsEmail } from "class-validator";
 import * as bcrypt from 'bcryptjs';
@@ -38,6 +38,30 @@ export class User {
     })
     @IsNotEmpty()
     role: UserRole;
+
+    @Column({ type: "float", default: 0.0 })
+    balance: number;
+
+    @Column({ type: "float", default: 0.0 })
+    payedAllTime: number;
+
+    @Column({ type: "float", default: 0.0 })
+    workingDeposit: number;
+
+    @Column({ type: "float", default: 0.0 })
+    freeDeposit: number;
+
+    @Column({ default: "" })
+    bitcoinWallet: string;
+
+    @Column({ default: "" })
+    advcashWallet: string;
+
+    @Column({ default: "" })
+    payeerWallet: string;
+
+    @Column({ default: "" })
+    payPin: string;
 
     @Column()
     @CreateDateColumn()

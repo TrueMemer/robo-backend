@@ -92,7 +92,7 @@ static newUser = async (req: Request, res: Response) => {
       pass: config.mail.password
     }
   });
-  var mailOptions = { from: 'robofxtrading19@gmail.com', to: user.email, subject: 'Account Verification Token', text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp://' + req.headers.host + '/user/confirmation?email=' + user.email + '&token=' + token.token + '.\n' };
+  var mailOptions = { from: 'robofxtrading19@gmail.com', to: user.email, subject: 'Подтверждение почты', text: 'Здравствуйте,\n\n' + 'Пожалуйста перейдите по ссылке для подтверждения аккаунта: \nhttps://robofxtrading.net/confirmation/' + user.email + '/' + token.token + ' .\n' };
 
   try {
     await transporter.sendMail(mailOptions);

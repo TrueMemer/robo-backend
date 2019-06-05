@@ -25,7 +25,7 @@ class ProfileController {
     static addBalanceHistory = async (req: Request, res: Response) => {
         const id = res.locals.jwtPayload.userId;
 
-        const history = await getRepository(CryptoTransaction).find({ where: { user_id: id }, select: ["status", "dateDone", "currency", "amount_usd"]});
+        const history = await getRepository(CryptoTransaction).find({ where: { user_id: id }, select: ["status", "dateCreated", "dateDone", "currency", "amount_usd"]});
 
         return res.status(200).send(history);
     }

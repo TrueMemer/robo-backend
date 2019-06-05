@@ -6,6 +6,8 @@ import routes from "./routes";
 
 import * as helmet from "helmet";
 import * as cors from "cors";
+import * as cron from "node-cron";
+import checkPendingDeposit from "./cron/checkPendingDeposit";
 
 createConnection().then(async connection => {
 
@@ -19,6 +21,8 @@ createConnection().then(async connection => {
 
     // start express server
     app.listen(3000);
+
+    cron.schedule("*/10 * * * *", checkPendingDeposit);
 
     console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results");
 

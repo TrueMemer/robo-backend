@@ -51,6 +51,12 @@ export class User {
     @Column({ type: "float", default: 0.0 })
     freeDeposit: number;
 
+    @Column({ type: "float", default: 0.0 })
+    pendingDeposit: number;
+
+    @Column({ default: new Date(0) })
+    pendingEndTime: Date;
+
     @Column({ default: "" })
     bitcoinWallet: string;
 
@@ -77,5 +83,9 @@ export class User {
 
     checkIfUnencryptedPasswordIsValid(unencryptedPassword: string) {
         return bcrypt.compareSync(unencryptedPassword, this.password);
+    }
+
+    updateBalance() {
+        this.balance = this.freeDeposit + this.workingDeposit + this.pendingDeposit;
     }
 }

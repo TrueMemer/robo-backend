@@ -5,6 +5,7 @@ import { getRepository } from "typeorm";
 import config from "../config/config";
 import axios from "axios";
 import { User } from "../entity/User";
+import moment = require("moment");
 
 const CryptoNames = {
     "bitcoin": "BTC",
@@ -129,8 +130,11 @@ export default class BlockIOController {
             return;
         }
 
-        user.balance += p.amount_usd;
+        user.pendingDeposit += p.amount_usd;
+
+        user.pendingEndTime = moment().hours(23).minutes(59).add(48, "hours").toDate();
         user.payedAllTime += p.amount_usd;
+        user.updateBalance();
 
         p.status = TransactionStatus.DONE;
         p.dateDone = new Date(Date.now());

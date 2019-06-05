@@ -20,6 +20,7 @@ export const JWTChecker = (req: Request, res: Response, next: NextFunction) => {
         expiresIn: "1h"
     });
     res.setHeader("Authorization", newToken);
+    res.setHeader("Access-Control-Expose-Headers", 'Authorization');
 
     next();
 }

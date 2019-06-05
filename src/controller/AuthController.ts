@@ -12,6 +12,7 @@ class AuthController {
     let { username, password } = req.body;
     if (!(username && password)) {
       res.status(400).send();
+      return;
     }
 
     const userRepository = getRepository(User);
@@ -20,6 +21,7 @@ class AuthController {
       user = await userRepository.findOneOrFail({ where: { username }, select: ["id", "username", "password", "isVerified"] });
     } catch (error) {
       res.status(401).send();
+      return;
     }
 
     if (!user.checkIfUnencryptedPasswordIsValid(password)) {
@@ -47,6 +49,7 @@ class AuthController {
     const { oldPassword, newPassword } = req.body;
     if (!(oldPassword && newPassword)) {
       res.status(400).send();
+      return;
     }
 
     const userRepository = getRepository(User);
@@ -55,6 +58,7 @@ class AuthController {
       user = await userRepository.findOneOrFail(id, { select: ["id", "username", "password"] });
     } catch (id) {
       res.status(401).send();
+      return;
     }
 
     if (!user.checkIfUnencryptedPasswordIsValid(oldPassword)) {

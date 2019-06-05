@@ -17,7 +17,7 @@ createConnection().then(async connection => {
     app.use(cors());
     app.use(bodyParser.json());
 
-    app.use("/", routes);
+    app.use("/api", routes);
 
     // start express server
     app.listen(3000);

@@ -9,6 +9,8 @@ import * as cors from "cors";
 import * as cron from "node-cron";
 import checkPendingDeposit from "./cron/checkPendingDeposit";
 
+process.env.TZ = "UTC";
+
 createConnection().then(async connection => {
 
     // create express app

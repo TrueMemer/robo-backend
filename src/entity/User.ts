@@ -54,7 +54,7 @@ export class User {
     @Column({ type: "float", default: 0.0 })
     pendingDeposit: number;
 
-    @Column({ default: new Date(0) })
+    @Column({ default: new Date(0), type: "timestamptz" })
     pendingEndTime: Date;
 
     @Column({ default: "" })

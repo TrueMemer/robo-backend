@@ -8,6 +8,7 @@ import * as helmet from "helmet";
 import * as cors from "cors";
 import * as cron from "node-cron";
 import * as compression from "compression";
+import * as morgan from "morgan";
 import checkPendingDeposit from "./cron/checkPendingDeposit";
 
 process.env.TZ = "UTC";
@@ -20,6 +21,7 @@ createConnection().then(async connection => {
     app.use(helmet());
     app.use(cors());
     app.use(bodyParser.json());
+    app.use(morgan('dev'));
 
     app.use("/api", routes);
 

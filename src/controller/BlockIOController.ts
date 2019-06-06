@@ -132,7 +132,7 @@ export default class BlockIOController {
 
         user.pendingDeposit += p.amount_usd;
 
-        user.pendingEndTime = moment().utc().utcOffset(3).hours(23).minutes(59).add(48, "hours").toDate();
+        user.pendingEndTime = new Date(moment().utc().hours(20).minutes(59).add(48, "hours").format());
         user.payedAllTime += p.amount_usd;
         user.updateBalance();
 

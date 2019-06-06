@@ -2,8 +2,9 @@ import { Request, Response } from "express-serve-static-core";
 import { getRepository } from "typeorm";
 import { User } from "../entity/User";
 import CryptoTransaction from "../entity/CryptoTransaction";
+import Deposit from "../entity/Deposit";
 
-class ProfileController {
+export default class ProfileController {
 
     static me = async (req: Request, res: Response) => {
         const id = res.locals.jwtPayload.userId;
@@ -15,8 +16,10 @@ class ProfileController {
             me = await rep.findOneOrFail(id);
         }
         catch (error) {
-            console.error(error);
-            return res.status(404).send();
+            return res.status(401).send({
+                msg: "Unauthorized (expired token)",
+                code: 401
+            });
         }
 
         res.send(me);
@@ -30,6 +33,12 @@ class ProfileController {
         return res.status(200).send(history);
     }
 
-}
+    static deposits = async (req: Request, res: Response) => {
+        const id = res.locals.jwtPayload.userId;
 
-export default ProfileController;
+        const deposits = await getRepository(Deposit).find({ where: { user_id: id }});
+
+        return res.status(200).send(deposits);
+    }
+
+}

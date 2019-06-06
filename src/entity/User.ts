@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, Double } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, Double, getRepository } from "typeorm";
 
 import { Length, IsNotEmpty, IsEmail } from "class-validator";
 import * as bcrypt from 'bcryptjs';
+import Deposit, { DepositStatus } from "./Deposit";
 
 export enum UserRole {
     ADMIN = "ADMIN",
@@ -87,5 +88,22 @@ export class User {
 
     updateBalance() {
         this.balance = this.freeDeposit + this.workingDeposit + this.pendingDeposit;
+    }
+
+    async updateDeposits() {
+        const deposits = await getRepository(Deposit).find({ where: { user_id: this.id }, select: ["amount", "status"] });
+
+        let amount_pending = 0;
+        let amount_working = 0;
+
+        for (let d of deposits) {
+            if (d.status == DepositStatus.PENDING)
+                amount_pending += d.amount;
+            else if (d.status == DepositStatus.WORKING) 
+                amount_working += d.amount;
+        }
+
+        this.pendingDeposit = amount_pending;
+        this.workingDeposit = amount_working;
     }
 }

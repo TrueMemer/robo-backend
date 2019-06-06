@@ -6,6 +6,7 @@ import config from "../config/config";
 import axios from "axios";
 import { User } from "../entity/User";
 import moment = require("moment");
+import Deposit, { DepositStatus } from "../entity/Deposit";
 
 const CryptoNames = {
     "bitcoin": "BTC",
@@ -32,8 +33,11 @@ export default class BlockIOController {
 
         const errors = await validate(p);
         if (errors.length > 0) {
-            res.status(400).send(errors);
-            return;
+            return res.status(400).send({
+                msg: "Validation error",
+                code: 400,
+                errors: errors
+            });
         }
 
         let r;
@@ -41,8 +45,11 @@ export default class BlockIOController {
         try {
             r = await axios.get(`https://api.cryptonator.com/api/ticker/usd-${CryptoNames[p.currency]}`);
         } catch (error) {
-            console.error(error);
-            res.status(400).send();
+            return res.status(400).send({
+                msg: "No currency with that name was found",
+                code: 400,
+                currency: p.currency
+            });
         }
 
         p.amount_currency = (await r.data.ticker.price * p.amount_usd);
@@ -52,14 +59,20 @@ export default class BlockIOController {
         try {
             r = await axios.get(`https://block.io/api/v2/get_new_address/?api_key=${config.blockio.api_keys[p.currency]}`);
         } catch (error) {
-            console.error(error);
-            res.status(500).send();
+            return res.status(400).send({
+                msg: "This currency is not supported",
+                code: 400,
+                currency: p.currency
+            });
         }
 
         let { status, data } = await r.data;
         if (status != "success") {
-            res.status(400).send();
-            return;
+            return res.status(400).send({
+                msg: "This currency is not supported",
+                code: 400,
+                currency: p.currency
+            });
         }
 
         p.receive_address = data.address;
@@ -70,9 +83,10 @@ export default class BlockIOController {
             p = await getRepository(CryptoTransaction).save(p);
         }
         catch (error) {
-            console.error(error);
-            res.status(500).send();
-            return;
+            return res.status(500).send({
+                msg: "Failed to save transaction",
+                code: 500
+            });
         }
 
         res.status(200).send(p);
@@ -130,10 +144,17 @@ export default class BlockIOController {
             return;
         }
 
-        user.pendingDeposit += p.amount_usd;
+        let deposit = new Deposit();
+        deposit.user_id = p.user_id;
+        deposit.amount = p.amount_usd;
+        deposit.status = DepositStatus.PENDING;
+        deposit.transactionId = p.id;
+        deposit.pendingEndTime = new Date(moment().utc().hours(20).minutes(59).add(48, "hours").format());
 
-        user.pendingEndTime = new Date(moment().utc().hours(20).minutes(59).add(48, "hours").format());
+        deposit = await getRepository(Deposit).save(deposit);
+
         user.payedAllTime += p.amount_usd;
+        user.updateDeposits();
         user.updateBalance();
 
         p.status = TransactionStatus.DONE;

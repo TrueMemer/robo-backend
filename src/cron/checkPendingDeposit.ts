@@ -1,14 +1,15 @@
 import { getRepository } from "typeorm";
+import Deposit, { DepositStatus } from "../entity/Deposit";
 import { User } from "../entity/User";
 
 export default async () => {
 
     console.log("Checking pending deposits...");
 
-    let users: User[];
+    let deposits: Deposit[];
 
     try {
-        users = await getRepository(User).find();
+        deposits = await getRepository(Deposit).find({ where: { status: DepositStatus.PENDING }});
     } catch(error) {
         console.error("checkPendingDeposit cron failed");
         console.error(error);
@@ -17,13 +18,17 @@ export default async () => {
 
     let count = 0;
 
-    for (let u of users) {
-        if (u.pendingEndTime.getTime() <= Date.now() && u.pendingDeposit != 0) {
-            u.workingDeposit += u.pendingDeposit;
-            u.pendingDeposit = 0;
-            u.pendingEndTime = new Date(0);
+    for (let d of deposits) {
+        if (d.pendingEndTime.getTime() <= Date.now()) {
+            d.status = DepositStatus.WORKING;
 
-            await getRepository(User).save(u);
+            await getRepository(Deposit).save(d);
+
+            const user = await getRepository(User).findOneOrFail(d.user_id);
+            await user.updateDeposits();
+            user.updateBalance();
+
+            await getRepository(User).save(user);
 
             count++;
         }

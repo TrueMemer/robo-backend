@@ -13,7 +13,7 @@ import checkPendingDeposit from "./cron/checkPendingDeposit";
 
 process.env.TZ = "UTC";
 
-createConnection().then(async connection => {
+createConnection().then(() => {
 
     // create express app
     const app = express();
@@ -30,6 +30,6 @@ createConnection().then(async connection => {
 
     cron.schedule("*/10 * * * *", checkPendingDeposit);
 
-    console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results");
+    console.log("Express server has started on port 3000.");
 
 }).catch(error => console.log(error));

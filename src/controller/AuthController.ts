@@ -6,32 +6,40 @@ import { validate } from "class-validator";
 import { User } from "../entity/User";
 import config from "../config/config";
 
-class AuthController {
-  static login = async (req: Request, res: Response) => {
+export default class AuthController {
+    static login = async (req: Request, res: Response) => {
 
     let { username, password } = req.body;
     if (!(username && password)) {
-      res.status(400).send();
-      return;
+        return res.status(400).send({
+            msg: "Bad request (no username or password)",
+            code: 400
+        });
     }
 
     const userRepository = getRepository(User);
     let user: User;
     try {
-      user = await userRepository.findOneOrFail({ where: { username }, select: ["id", "username", "password", "isVerified"] });
+        user = await userRepository.findOneOrFail({ where: { username }, select: ["id", "username", "password", "isVerified"] });
     } catch (error) {
-      res.status(401).send();
-      return;
+        return res.status(401).send({
+            msg: "Unauthorized (invalid credentials)",
+            code: 401
+        });
     }
 
     if (!user.checkIfUnencryptedPasswordIsValid(password)) {
-      res.status(401).send();
-      return;
+        return res.status(401).send({
+            msg: "Unauthorized (invalid credentials)",
+            code: 401
+        });
     }
 
     if (!user.isVerified) {
-      res.status(401).send("Email is not verified!");
-      return;
+        return res.status(401).send({
+            msg: "Unauthorized (account is not verified)",
+            code: 401
+        });
     }
 
     const token = jwt.sign(
@@ -40,7 +48,7 @@ class AuthController {
       { expiresIn: "1h" }
     );
 
-    res.send(token);
+    res.send({ token: token });
   };
 
   static changePassword = async (req: Request, res: Response) => {
@@ -48,35 +56,43 @@ class AuthController {
 
     const { oldPassword, newPassword } = req.body;
     if (!(oldPassword && newPassword)) {
-      res.status(400).send();
-      return;
+        return res.status(400).send({
+            msg: "Bad request (no old password or new password)",
+            code: 400
+        });
     }
 
     const userRepository = getRepository(User);
     let user: User;
     try {
-      user = await userRepository.findOneOrFail(id, { select: ["id", "username", "password"] });
+        user = await userRepository.findOneOrFail(id, { select: ["id", "username", "password"] });
     } catch (id) {
-      res.status(401).send();
-      return;
+        return res.status(401).send({
+            msg: "Unauthorized (expired token)",
+            code: 401
+        });
     }
 
     if (!user.checkIfUnencryptedPasswordIsValid(oldPassword)) {
-      res.status(401).send();
-      return;
+        return res.status(401).send({
+            msg: "Unauthorized (wrong old password)",
+            code: 401
+        });
     }
 
     user.password = newPassword;
     const errors = await validate(user);
     if (errors.length > 0) {
-      res.status(400).send(errors);
-      return;
+        return res.status(400).send({
+            msg: "Validation error" ,
+            code: 400,
+            errors: errors
+        });
     }
 
     user.hashPassword();
     userRepository.save(user);
 
-    res.status(204).send();
+    res.status(200).send();
   };
 }
-export default AuthController;

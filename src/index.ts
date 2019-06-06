@@ -7,6 +7,7 @@ import routes from "./routes";
 import * as helmet from "helmet";
 import * as cors from "cors";
 import * as cron from "node-cron";
+import * as compression from "compression";
 import checkPendingDeposit from "./cron/checkPendingDeposit";
 
 process.env.TZ = "UTC";
@@ -15,6 +16,7 @@ createConnection().then(async connection => {
 
     // create express app
     const app = express();
+    app.use(compression());
     app.use(helmet());
     app.use(cors());
     app.use(bodyParser.json());

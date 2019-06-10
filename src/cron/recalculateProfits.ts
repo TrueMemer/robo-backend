@@ -23,9 +23,23 @@ export default async () => {
         let workingDep = 0.0;
 
         for (let i = 0; i < deposits.length; i++) {
-            workingDep += deposits[i].amount;
 
-            const orders = await getRepository(Order).find({ where: { close_time: LessThan(deposits[i + 1].pendingEndTime) } });
+            let orders = [];
+
+            workingDep += deposits[i].amount;
+            if (i = 0) {
+                orders = await getRepository(Order)
+                                .createQueryBuilder("order")
+                                .where("order.close_time < :date", { date: deposits[i] })
+                                .getMany();
+            }
+            else {
+                orders = await getRepository(Order)
+                                .createQueryBuilder("order")
+                                .where("order.close_time < :date", { date: deposits[i].pendingEndTime })
+                                .andWhere("order.close_time >= :date", { date: deposits[i - 1].pendingEndTime } )
+                                .getMany();
+            }
 
             for (let order of orders) {
 

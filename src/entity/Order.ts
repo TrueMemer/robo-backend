@@ -9,10 +9,10 @@ export default class Order {
     @Column({ type: "float" })
     open_price: number;
 
-    @Column({ type: "timestamptz" })
+    @Column({ type: "timestamptz", nullable: true })
     open_time: Date;
 
-    @Column()
+    @Column({ default: "" })
     symbol: string;
 
     @Column({ type: "float" })
@@ -39,7 +39,7 @@ export default class Order {
     @Column({ type: "float" })
     profit: number;
 
-    @Column({ type: "timestamptz" })
+    @Column({ type: "timestamptz", nullable: true })
     close_time: Date;
 
     @Column({ type: "float" })
@@ -48,7 +48,7 @@ export default class Order {
     @Column({ type: "float" })
     open_balance: number;
 
-    @Column({ type: "timestamptz" })
+    @Column({ type: "timestamptz", nullable: true  })
     expiration: Date;
 
     @Column({ type: "float" })

@@ -14,6 +14,7 @@ export default async () => {
         await getConnection()
             .createQueryBuilder()
             .delete()
+            .from(Profit)
             .where("user_id = :id", { id: user.id })
             .execute();
 

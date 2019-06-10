@@ -18,7 +18,8 @@ export default async () => {
             .where("user_id = :id", { id: user.id })
             .execute();
 
-        const deposits : Deposit[] = await getRepository(Deposit).find({ where: { user_id: user.id }});
+
+        const deposits = await getRepository(Deposit).find({ where: { user_id: user.id }, order: { pendingEndTime: "ASC" } });
 
         let workingDep = 0.0;
 
@@ -26,22 +27,14 @@ export default async () => {
 
             let orders = [];
 
-            workingDep += deposits[i].amount;
-            if (i = 0) {
-                orders = await getRepository(Order)
-                                .createQueryBuilder("order")
-                                .where("order.close_time < :date", { date: deposits[i] })
-                                .getMany();
-            }
-            else {
-                orders = await getRepository(Order)
-                                .createQueryBuilder("order")
-                                .where("order.close_time < :date", { date: deposits[i].pendingEndTime })
-                                .andWhere("order.close_time >= :date", { date: deposits[i - 1].pendingEndTime } )
-                                .getMany();
-            }
+            orders = await getRepository(Order)
+                            .createQueryBuilder("order")
+                            .where("order.close_time < :date", { date: deposits[i].pendingEndTime })
+                            .getMany();
 
             for (let order of orders) {
+
+                if ((await getRepository(Profit).find({ where: { ticket: order.ticket } })).length > 0) return;
 
                 let profit = new Profit();
 

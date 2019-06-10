@@ -10,10 +10,11 @@ import * as cron from "node-cron";
 import * as compression from "compression";
 import * as morgan from "morgan";
 import checkPendingDeposit from "./cron/checkPendingDeposit";
+import recalculateProfits from "./cron/recalculateProfits";
 
 process.env.TZ = "UTC";
 
-createConnection().then(() => {
+createConnection().then(async () => {
 
     // create express app
     const app = express();
@@ -24,6 +25,8 @@ createConnection().then(() => {
     app.use(morgan('dev'));
 
     app.use("/api", routes);
+
+    await recalculateProfits();
 
     // start express server
     app.listen(3000);

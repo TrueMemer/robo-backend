@@ -33,7 +33,7 @@ export default async () => {
                 profit.user_id = user.id;
                 profit.ticket = order.ticket;
                 profit.depositFactor = workingDep / order.open_balance;
-                profit.profit = order.profit * profit.depositFactor;
+                profit.profit = order.profit * profit.depositFactor / 2;
 
                 await getRepository(Profit).save(profit);
 

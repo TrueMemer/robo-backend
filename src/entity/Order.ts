@@ -48,13 +48,10 @@ export default class Order {
     @Column({ type: "float" })
     open_balance: number;
 
-    @Column({ type: "timestamptz", nullable: true  })
-    expiration: Date;
-
     @Column({ type: "float" })
     commission: number;
 
-    @Column({ default: "" })
+    @Column({ default: "", nullable: true })
     comment: string;
 
     @Column({ default: 0 })

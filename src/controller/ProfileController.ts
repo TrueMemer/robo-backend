@@ -3,6 +3,7 @@ import { getRepository } from "typeorm";
 import { User } from "../entity/User";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
+import Profit from "../entity/Profit";
 
 export default class ProfileController {
 
@@ -39,6 +40,14 @@ export default class ProfileController {
         const deposits = await getRepository(Deposit).find({ where: { user_id: id }});
 
         return res.status(200).send(deposits);
+    }
+
+    static profits = async (req: Request, res: Response) => {
+        const id = res.locals.jwtPayload.userId;
+
+        const profits = await getRepository(Profit).find({ where: { user_id: id }});
+
+        return res.status(200).send(profits);
     }
 
 }

@@ -18,4 +18,6 @@ export default class Profit {
     @Column({ type: "float" })
     depositFactor: number;
 
+    @Column({ type: "float" })
+    workingDeposit: number;
 }

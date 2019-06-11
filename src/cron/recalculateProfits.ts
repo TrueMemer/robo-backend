@@ -26,11 +26,23 @@ export default async () => {
         for (let i = 0; i < deposits.length; i++) {
 
             let orders = [];
-
+            if (i == 0)
             orders = await getRepository(Order)
                             .createQueryBuilder("order")
                             .where("order.close_time < :date", { date: deposits[i].pendingEndTime })
                             .getMany();
+            else if (i == deposits.length - 1)
+            orders = await getRepository(Order)
+            .createQueryBuilder("order")
+            .where("order.close_time < :date", { date: deposits[i].pendingEndTime })
+            .andWhere("order.close_time > :date", { date: deposits[i - 1].pendingEndTime })
+            .getMany();
+            else
+            orders = await getRepository(Order)
+            .createQueryBuilder("order")
+            .where("order.close_time < :date", { date: deposits[i + 1].pendingEndTime })
+            .andWhere("order.close_time > :date", { date: deposits[i - 1].pendingEndTime })
+            .getMany();
 
             for (let order of orders) {
 

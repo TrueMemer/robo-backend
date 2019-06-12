@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { getRepository } from "typeorm";
 import { validate } from "class-validator";
 
-import { User, UserRole } from "../entity/User";
+import User, { UserRole } from "../entity/User";
 import { VerificationToken } from "../entity/VerificationToken";
 
 import * as crypto from "crypto";

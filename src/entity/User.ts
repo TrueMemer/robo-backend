@@ -78,6 +78,10 @@ export default class User {
     @UpdateDateColumn()
     updatedAt: Date;
 
+    profitTotal: number;
+
+    withdrawedTotal: number;
+
     hashPassword() {
         this.password = bcrypt.hashSync(this.password, 8);
     }

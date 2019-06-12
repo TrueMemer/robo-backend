@@ -1,6 +1,6 @@
 import { getRepository } from "typeorm";
 import Deposit, { DepositStatus } from "../entity/Deposit";
-import { User } from "../entity/User";
+import User from "../entity/User";
 
 export default async () => {
 

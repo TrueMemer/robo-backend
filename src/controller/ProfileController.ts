@@ -1,5 +1,5 @@
 import { Request, Response } from "express-serve-static-core";
-import { getRepository } from "typeorm";
+import { getRepository, getConnection } from "typeorm";
 import User from "../entity/User";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
@@ -11,7 +11,7 @@ export default class ProfileController {
         const id = res.locals.jwtPayload.userId;
 
         const rep = getRepository(User);
-        let me;
+        let me: User;
 
         try {
             me = await rep.findOneOrFail(id);
@@ -22,6 +22,18 @@ export default class ProfileController {
                 code: 401
             });
         }
+
+        me.profitTotal = <number>await getConnection()
+                            .createQueryBuilder()
+                            .where("profit.user_id = :id", { id: me.id })
+                            .select("sum(profit.amount) from profit")
+                            .getRawOne();
+
+        me.withdrawedTotal = <number>await getConnection()
+                                .createQueryBuilder()
+                                .where("widthdrawal.user_id = :id", { id: me.id })
+                                .select("sum(withdrawal.amount) from withdrawal")
+                                .getRawOne();
 
         res.send(me);
     };

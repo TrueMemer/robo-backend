@@ -4,7 +4,7 @@ import { validate } from "class-validator";
 import { getRepository } from "typeorm";
 import config from "../config/config";
 import axios from "axios";
-import { User } from "../entity/User";
+import User from "../entity/User";
 import moment = require("moment");
 import Deposit, { DepositStatus } from "../entity/Deposit";
 

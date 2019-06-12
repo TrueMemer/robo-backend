@@ -24,24 +24,24 @@ export default class ProfileController {
             });
         }
 
-        let { profitTotal } = await getRepository(Profit)
-                            .createQueryBuilder("profit")
-                            .where("profit.user_id = :id", { id: me.id })
-                            .select("sum(profit.profit)")
-                            .getRawOne();
+        {
+            let { sum } = await getRepository(Profit)
+                                .createQueryBuilder("profit")
+                                .where("profit.user_id = :id", { id: me.id })
+                                .select("sum(profit.profit)")
+                                .getRawOne();
 
-        me.profitTotal = profitTotal;
+            me.profitTotal = sum != null ? sum : 0;
+        }
 
-        let { withdrawedTotal } = await getRepository(Withdrawal)
+        let { sum } = await getRepository(Withdrawal)
                                 .createQueryBuilder("withdrawal")
                                 .where("withdrawal.user_id = :id", { id: me.id })
                                 .select("sum(withdrawal.amount)")
                                 .getRawOne();
 
-        me.withdrawedTotal = withdrawedTotal;
-
+        me.withdrawedTotal = sum != null ? sum : 0;
         me.freeDeposit = me.profitTotal - me.withdrawedTotal;
-
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
 
         res.send(me);

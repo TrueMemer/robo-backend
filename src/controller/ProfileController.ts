@@ -1,6 +1,6 @@
 import { Request, Response } from "express-serve-static-core";
 import { getRepository } from "typeorm";
-import { User } from "../entity/User";
+import User from "../entity/User";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
 import Profit from "../entity/Profit";

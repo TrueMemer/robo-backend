@@ -42,6 +42,8 @@ export default class ProfileController {
 
         me.freeDeposit = me.profitTotal - me.withdrawedTotal;
 
+        me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
+
         res.send(me);
     };
 

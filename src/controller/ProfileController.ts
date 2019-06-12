@@ -24,17 +24,21 @@ export default class ProfileController {
             });
         }
 
-        me.profitTotal = <number>await getRepository(Profit)
+        let { profitTotal } = await getRepository(Profit)
                             .createQueryBuilder("profit")
                             .where("profit.user_id = :id", { id: me.id })
-                            .select("sum(profit.profit) from profit")
+                            .select("sum(profit.profit)")
                             .getRawOne();
 
-        me.withdrawedTotal = <number>await getRepository(Withdrawal)
+        me.profitTotal = profitTotal;
+
+        let { withdrawedTotal } = await getRepository(Withdrawal)
                                 .createQueryBuilder("withdrawal")
                                 .where("withdrawal.user_id = :id", { id: me.id })
-                                .select("sum(withdrawal.profit) from withdrawal")
+                                .select("sum(withdrawal.amount)")
                                 .getRawOne();
+
+        me.withdrawedTotal = withdrawedTotal;
 
         res.send(me);
     };

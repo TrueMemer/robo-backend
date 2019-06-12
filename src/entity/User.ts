@@ -50,9 +50,6 @@ export default class User {
     workingDeposit: number;
 
     @Column({ type: "float", default: 0.0 })
-    freeDeposit: number;
-
-    @Column({ type: "float", default: 0.0 })
     pendingDeposit: number;
 
     @Column({ default: new Date(0), type: "timestamptz" })
@@ -81,6 +78,8 @@ export default class User {
     profitTotal: number;
 
     withdrawedTotal: number;
+
+    freeDeposit: number;
 
     hashPassword() {
         this.password = bcrypt.hashSync(this.password, 8);

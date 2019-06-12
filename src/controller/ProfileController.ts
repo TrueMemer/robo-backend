@@ -4,6 +4,7 @@ import User from "../entity/User";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
 import Profit from "../entity/Profit";
+import Withdrawal from "../entity/Withdrawal";
 
 export default class ProfileController {
 
@@ -23,16 +24,16 @@ export default class ProfileController {
             });
         }
 
-        me.profitTotal = <number>await getConnection()
-                            .createQueryBuilder()
+        me.profitTotal = <number>await getRepository(Profit)
+                            .createQueryBuilder("profit")
                             .where("profit.user_id = :id", { id: me.id })
-                            .select("sum(profit.amount) from profit")
+                            .select("sum(profit.profit) from profit")
                             .getRawOne();
 
-        me.withdrawedTotal = <number>await getConnection()
-                                .createQueryBuilder()
-                                .where("widthdrawal.user_id = :id", { id: me.id })
-                                .select("sum(withdrawal.amount) from withdrawal")
+        me.withdrawedTotal = <number>await getRepository(Withdrawal)
+                                .createQueryBuilder("withdrawal")
+                                .where("withdrawal.user_id = :id", { id: me.id })
+                                .select("sum(withdrawal.profit) from withdrawal")
                                 .getRawOne();
 
         res.send(me);

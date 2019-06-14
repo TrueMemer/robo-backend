@@ -23,15 +23,15 @@ export default class ProfileController {
                 code: 401
             });
         }
-
+        me.profitTotal = 0;
         {
-            let { sum } = await getRepository(Profit)
-                                .createQueryBuilder("profit")
-                                .where("profit.user_id = :id", { id: me.id })
-                                .select("sum(profit.profit)")
-                                .getRawOne();
+            let profits = await getRepository(Profit).find({ where: { user_id: me.id }, order: { ticket: "ASC" } });
 
-            me.profitTotal = sum != null ? sum : 0;
+            for (let i = 0; i < profits.length; i++) {
+                console.log(me.profitTotal + " + " + profits[i].profit + " = ", (me.profitTotal + profits[i].profit));
+
+                me.profitTotal += profits[i].profit;
+            }
         }
 
         let { sum } = await getRepository(Withdrawal)

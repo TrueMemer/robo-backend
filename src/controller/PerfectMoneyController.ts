@@ -9,7 +9,7 @@ export default class PerfectMoneyController {
     static status = async (req: Request, res: Response) => {
         
         let deposit = new Deposit();
-        deposit.user_id = parseInt(Base64.decode(req.body["USER_ID"]));
+        deposit.user_id = parseInt(req.body["USER_ID"]);
         deposit.amount = parseFloat(req.body["PAYMENT_AMOUNT"]);
         deposit.status = DepositStatus.PENDING;
         deposit.transactionId = uuid();

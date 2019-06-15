@@ -9,5 +9,6 @@ router.get("/", [JWTChecker], ProfileController.me);
 router.get("/addBalanceHistory", [JWTChecker], ProfileController.addBalanceHistory);
 router.get("/getDeposits", [JWTChecker], ProfileController.deposits);
 router.get("/getProfits", [JWTChecker], ProfileController.profits);
+router.get("/getRefs", [JWTChecker], ProfileController.refs);
 
 export default router;

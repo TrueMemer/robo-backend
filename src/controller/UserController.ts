@@ -43,7 +43,7 @@ export default class UserController {
 
     static newUser = async (req: Request, res: Response) => {
 
-        let { username, password, email } = req.body;
+        let { username, password, email, referrer } = req.body;
         let user = new User();
         user.username = username;
         user.password = password;
@@ -70,6 +70,12 @@ export default class UserController {
                 msg: "Conflict (username or email is already used)",
                 code: 409
             });
+        }
+
+        let r = await getRepository(User).findOne({ where: { id: parseInt(referrer) } });
+
+        if (r) {
+            r.children.push(user);
         }
 
         const tokenRepository = getRepository(VerificationToken);

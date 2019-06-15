@@ -1,5 +1,5 @@
 import { Request, Response } from "express-serve-static-core";
-import { getRepository, getConnection } from "typeorm";
+import { getRepository, getConnection, getManager } from "typeorm";
 import User from "../entity/User";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
@@ -69,6 +69,17 @@ export default class ProfileController {
         const profits = await getRepository(Profit).find({ where: { user_id: id }});
 
         return res.status(200).send(profits);
+    }
+
+    static refs = async (req: Request, res: Response) => {
+        const id = res.locals.jwtPayload.userId;
+
+        const user = await getRepository(User).findOne(id);
+
+        const manager = getManager();
+        const trees = await manager.getTreeRepository(User).findDescendants(user);
+
+        return res.status(200).send(trees);
     }
 
 }

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, Double, getRepository } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, Double, getRepository, Tree, TreeChildren, TreeParent } from "typeorm";
 
 import { Length, IsNotEmpty, IsEmail } from "class-validator";
 import * as bcrypt from 'bcryptjs';
@@ -12,6 +12,7 @@ export enum UserRole {
 @Entity()
 @Unique(["username"])
 @Unique(["email"])
+@Tree("closure-table")
 export default class User {
 
     @PrimaryGeneratedColumn()
@@ -80,6 +81,12 @@ export default class User {
     withdrawedTotal: number;
 
     freeDeposit: number;
+
+    @TreeChildren()
+    children: User[];
+
+    @TreeParent()
+    parent: User;
 
     hashPassword() {
         this.password = bcrypt.hashSync(this.password, 8);

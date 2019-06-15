@@ -22,7 +22,6 @@ router.get("/payeer/fail", PayeerController.fail);
 router.get("/payeer/success", PayeerController.success);
 
 router.post("/pm/status", PerfectMoneyController.status);
-router.get("/pm/fail", PerfectMoneyController.status);
-router.get("/pm/success", PerfectMoneyController.status);
+router.post("/pm/fail", PerfectMoneyController.fail);
 
 export default router;

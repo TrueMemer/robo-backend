@@ -17,7 +17,7 @@ router.post("/letypay/fail", LatyPayController.fail);
 router.post("/letypay/success", LatyPayController.success);
 
 router.post("/payeer/status", PayeerController.status);
-router.post("/payeer/fail", PayeerController.fail);
-router.post("/payeer/success", PayeerController.success);
+router.get("/payeer/fail", PayeerController.fail);
+router.get("/payeer/success", PayeerController.success);
 
 export default router;

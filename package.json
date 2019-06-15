@@ -3,8 +3,9 @@
    "version": "0.0.1",
    "description": "Awesome project developed with TypeORM.",
    "devDependencies": {
-      "ts-node": "3.3.0",
       "@types/node": "^8.0.29",
+      "@types/uuid": "^3.4.4",
+      "ts-node": "3.3.0",
       "typescript": "3.3.3333"
    },
    "dependencies": {
@@ -13,6 +14,7 @@
       "@types/body-parser": "^1.17.0",
       "@types/cors": "^2.8.5",
       "@types/helmet": "0.0.43",
+      "@types/js-base64": "^2.3.1",
       "@types/jsonwebtoken": "^8.3.2",
       "@types/moment": "^2.13.0",
       "@types/node-cron": "^2.0.2",
@@ -26,6 +28,7 @@
       "crypto": "^1.0.1",
       "express": "^4.15.4",
       "helmet": "^3.18.0",
+      "js-base64": "^2.5.1",
       "jsonwebtoken": "^8.5.1",
       "moment": "^2.24.0",
       "morgan": "^1.9.1",
@@ -35,7 +38,8 @@
       "pg": "^7.3.0",
       "reflect-metadata": "^0.1.10",
       "ts-node-dev": "^1.0.0-pre.39",
-      "typeorm": "0.2.17"
+      "typeorm": "0.2.17",
+      "uuid": "^3.3.2"
    },
    "scripts": {
       "tsc": "tsc",

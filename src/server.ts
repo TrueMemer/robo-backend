@@ -4,6 +4,7 @@ import bodyParser = require("body-parser");
 import compression = require("compression");
 import cors = require("cors");
 import helmet = require("helmet");
+import morgan = require("morgan");
 import cron = require("node-cron");
 import { createConnection } from "typeorm";
 
@@ -19,6 +20,7 @@ export default class RoboServer extends Server {
         this.app.use(compression());
         this.app.use(helmet());
         this.app.use(cors());
+        this.app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "production"));
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.setupDatabase();

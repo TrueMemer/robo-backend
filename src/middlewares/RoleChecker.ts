@@ -1,9 +1,8 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { getRepository } from "typeorm";
-
 import User from "../entity/User";
 
-export const RoleChecker = (roles: Array<string>) => {
+export const RoleChecker = (roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
 
     const id = res.locals.jwtPayload.userId;
@@ -16,7 +15,10 @@ export const RoleChecker = (roles: Array<string>) => {
       res.status(401).send();
     }
 
-    if (roles.indexOf(user.role) > -1) next();
-    else res.status(401).send();
+    if (roles.indexOf(user.role) > -1) {
+      next();
+    } else {
+      res.status(401).send();
+    }
   };
 };

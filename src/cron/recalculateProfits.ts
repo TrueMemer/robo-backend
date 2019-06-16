@@ -1,14 +1,14 @@
-import { getRepository, getConnection } from "typeorm";
-import User from "../entity/User";
-import Order from "../entity/Order";
+import { getConnection, getRepository } from "typeorm";
 import Deposit, { DepositStatus } from "../entity/Deposit";
+import Order from "../entity/Order";
 import Profit from "../entity/Profit";
+import User from "../entity/User";
 
 export default async () => {
 
     const users: User[] = await getRepository(User).find();
 
-    for (let user of users) {
+    for (const user of users) {
 
         await getConnection()
             .createQueryBuilder()
@@ -17,48 +17,49 @@ export default async () => {
             .where("user_id = :id", { id: user.id })
             .execute();
 
-        const deposits = await getRepository(Deposit).find({ where: { user_id: user.id, status: DepositStatus.WORKING }, order: { pendingEndTime: "ASC" } });
+        const deposits = await getRepository(Deposit).find(
+            { where: { user_id: user.id, status: DepositStatus.WORKING }, order: { pendingEndTime: "ASC" }
+        });
 
         let workingDep = 0.0;
 
         for (let i = 0; i < deposits.length; i++) {
 
-            console.log(deposits)
-
             workingDep += deposits[i].amount;
 
             let orders = [];
 
-            let query = await getRepository(Order)
+            const query = await getRepository(Order)
                             .createQueryBuilder("order")
                             .addOrderBy("order.ticket", "ASC")
                             .where("order.type != 6")
                             .andWhere("order.close_balance != 0");
 
-            if (i == 0) {
+            if (i === 0) {
                 query.where("order.close_time > :date", { date: deposits[i].pendingEndTime });
-                    if (deposits[i + 1] != undefined)
-                        query.andWhere("order.close_time < :date1", { date1: deposits[i + 1].pendingEndTime })
+
+                if (deposits[i + 1] !== undefined) {
+                    query.andWhere("order.close_time < :date1", { date1: deposits[i + 1].pendingEndTime });
+                }
+
                 orders = await query.getMany();
-            }
-            else if (i == deposits.length - 1) {
+            } else if (i === deposits.length - 1) {
                 orders = await query
                     .where("order.close_time > :date", { date: deposits[i].pendingEndTime })
                     .andWhere("order.close_time > :date1", { date1: deposits[i - 1].pendingEndTime })
                     .getMany();
-            }
-            else {
+            } else {
                 orders = await query
                     .where("order.close_time > :date", { date: deposits[i].pendingEndTime })
                     .andWhere("order.close_time < :date1", { date1: deposits[i + 1].pendingEndTime })
                     .getMany();
             }
 
-            for (let order of orders) {
+            for (const order of orders) {
 
-                let profit = new Profit();
+                const profit = new Profit();
 
-                if (order.type == 6) {
+                if (order.type as number === 6) {
                     console.log(order);
                     continue;
                 }
@@ -68,11 +69,8 @@ export default async () => {
                 profit.depositFactor = workingDep / order.open_balance;
                 profit.workingDeposit = workingDep;
                 profit.profit = ((order.profit + order.swap) * profit.depositFactor) / 2;
-                
-                // console.log("(", user.id, ")", "[", order.ticket, "] ", order.profit, " * (", workingDep, " / ", order.open_balance, ") / 2 = ", profit.profit);
 
                 await getRepository(Profit).save(profit);
-
             }
         }
 
@@ -83,4 +81,4 @@ export default async () => {
 
     }
 
-}
+};

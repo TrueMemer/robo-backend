@@ -1,16 +1,21 @@
+import { Controller, Post } from "@overnightjs/core";
 import { Request, Response } from "express";
 
-export default class LatyPayController {
+@Controller("api/payment/latypay")
+export class LatyPayController {
 
-    static status = async (req: Request, res: Response) => {
+    @Post()
+    private async status(req: Request, res: Response) {
         console.log(req.body);
     }
 
-    static success = async (req: Request, res: Response) => {
+    @Post()
+    private async success(req: Request, res: Response) {
         console.log(req.body);
     }
 
-    static fail = async (req: Request, res: Response) => {
+    @Post()
+    private async fail(req: Request, res: Response) {
         console.log(req.body);
     }
 

@@ -1,57 +1,65 @@
-import { Request, Response } from "express";
-import * as jwt from "jsonwebtoken";
-import { getRepository } from "typeorm";
+import { Controller, Middleware, Post } from "@overnightjs/core";
 import { validate } from "class-validator";
-
-import User from "../entity/User";
+import { Request, Response } from "express";
+import { sign } from "jsonwebtoken";
+import { getRepository } from "typeorm";
 import config from "../config/config";
+import User from "../entity/User";
+import { JWTChecker } from "../middlewares/JWTChecker";
 
-export default class AuthController {
-    static login = async (req: Request, res: Response) => {
+@Controller("api/auth")
+export class AuthController {
 
-    let { username, password } = req.body;
-    if (!(username && password)) {
-        return res.status(400).send({
-            msg: "Bad request (no username or password)",
-            code: 400
-        });
-    }
+    @Post("login")
+    private async login(req: Request, res: Response) {
 
-    const userRepository = getRepository(User);
-    let user: User;
-    try {
-        user = await userRepository.findOneOrFail({ where: { username }, select: ["id", "username", "password", "isVerified"] });
-    } catch (error) {
-        return res.status(401).send({
-            msg: "Unauthorized (invalid credentials)",
-            code: 401
-        });
-    }
+        const { username, password } = req.body;
+        if (!(username && password)) {
+            return res.status(400).send({
+                msg: "Bad request (no username or password)",
+                code: 400
+            });
+        }
 
-    if (!user.checkIfUnencryptedPasswordIsValid(password)) {
-        return res.status(401).send({
-            msg: "Unauthorized (invalid credentials)",
-            code: 401
-        });
-    }
+        const userRepository = getRepository(User);
+        let user: User;
+        try {
+            user = await userRepository.findOneOrFail(
+                { where: { username }, select: ["id", "username", "password", "isVerified"]
+            });
+        } catch (error) {
+            return res.status(401).send({
+                msg: "Unauthorized (invalid credentials)",
+                code: 401
+            });
+        }
 
-    if (!user.isVerified) {
-        return res.status(401).send({
-            msg: "Unauthorized (account is not verified)",
-            code: 401
-        });
-    }
+        if (!user.checkIfUnencryptedPasswordIsValid(password)) {
+            return res.status(401).send({
+                msg: "Unauthorized (invalid credentials)",
+                code: 401
+            });
+        }
 
-    const token = jwt.sign(
-      { userId: user.id, username: user.username },
-      config.jwtSecret,
-      { expiresIn: "1h" }
-    );
+        if (!user.isVerified) {
+            return res.status(401).send({
+                msg: "Unauthorized (account is not verified)",
+                code: 401
+            });
+        }
 
-    res.send({ token: token });
-  };
+        const token = sign(
+        { userId: user.id, username: user.username },
+        config.jwtSecret,
+        { expiresIn: "1h" }
+        );
 
-  static changePassword = async (req: Request, res: Response) => {
+        res.send({ token });
+  }
+
+  @Post("change-password")
+  @Middleware([JWTChecker])
+  private async changePassword(req: Request, res: Response) {
     const id = res.locals.jwtPayload.userId;
 
     const { oldPassword, newPassword } = req.body;
@@ -86,7 +94,7 @@ export default class AuthController {
         return res.status(400).send({
             msg: "Validation error" ,
             code: 400,
-            errors: errors
+            errors
         });
     }
 
@@ -94,5 +102,5 @@ export default class AuthController {
     userRepository.save(user);
 
     res.status(200).send();
-  };
+  }
 }

@@ -1,23 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export default class Profit {
 
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    public id: string;
 
     @Column()
-    user_id: number;
+    public user_id: number;
 
     @Column({ type: "float" })
-    profit: number;
+    public profit: number;
 
     @Column()
-    ticket: number;
+    public ticket: number;
 
     @Column({ type: "float" })
-    depositFactor: number;
+    public depositFactor: number;
 
     @Column({ type: "float" })
-    workingDeposit: number;
+    public workingDeposit: number;
 }

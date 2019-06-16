@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, IsNull } from "typeorm";
 import { IsNotEmpty, Min, NotEquals } from "class-validator";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 export enum TransactionType {
     WITHDRAWAL,
@@ -17,41 +17,41 @@ export enum TransactionStatus {
 export default class CryptoTransaction {
 
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    public id: string;
 
     @Column()
     @IsNotEmpty()
-    user_id: number;
+    public user_id: number;
 
     @Column()
     @IsNotEmpty()
-    currency: string;
+    public currency: string;
 
     @Column({
         type: "enum",
         enum: TransactionType,
     })
-    type: TransactionType;
+    public type: TransactionType;
 
     @Column({ type: "float" })
     @IsNotEmpty()
     @NotEquals(0)
     @Min(0)
-    amount_usd: number;
+    public amount_usd: number;
 
     @Column({ type: "float" })
-    amount_currency: number;
+    public amount_currency: number;
 
     @Column()
-    receive_address: string;
+    public receive_address: string;
 
     @Column({ default: TransactionStatus.PENDING })
-    status: TransactionStatus;
+    public status: TransactionStatus;
 
     @Column()
-    dateCreated: Date;
+    public dateCreated: Date;
 
     @Column({ nullable: true })
-    dateDone: Date;
+    public dateDone: Date;
 
 }

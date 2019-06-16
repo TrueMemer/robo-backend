@@ -1,27 +1,32 @@
-import { Response, Request } from "express";
-import Order from "../entity/Order";
+import { Controller, Post } from "@overnightjs/core";
+import { Request, Response } from "express";
 import { getRepository, LessThanOrEqual } from "typeorm";
+import Order from "../entity/Order";
 
-export default class MT4Controller {
+@Controller("api/mt4")
+export class MT4Controller {
 
-    static updateOrders = async (req: Request, res: Response) => {
-        
+    @Post("updateorders")
+    private async updateOrders(req: Request, res: Response) {
+
         let orders: Order[];
 
-        orders = <Order[]> JSON.parse(req.body);
+        orders = JSON.parse(req.body) as Order[];
 
-        for (let order of orders) {
+        for (const order of orders) {
             if ((await getRepository(Order).find({ where: { ticket: order.ticket } })).length < 1) {
-                if (order.open_balance == 0 && order.close_balance == 0) {
+                if (order.open_balance === 0 && order.close_balance === 0) {
 
-                    const o = await getRepository(Order).find({ where: { close_time: LessThanOrEqual(order.open_time) }, order: { open_time: "DESC" } });
+                    const o = await getRepository(Order).find(
+                        { where: { close_time: LessThanOrEqual(order.open_time) }, order: { open_time: "DESC" }
+                    });
 
                     order.open_balance = o[o.length - 1].close_balance;
                 }
 
                 await getRepository(Order).save(order);
             } else {
-                let o = await getRepository(Order).findOneOrFail({where: {ticket: order.ticket}});
+                const o = await getRepository(Order).findOneOrFail({where: {ticket: order.ticket}});
 
                 o.close_balance = order.close_balance;
                 o.close_time = order.close_time;

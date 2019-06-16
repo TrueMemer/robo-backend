@@ -10,7 +10,7 @@ export default async () => {
 
     try {
         deposits = await getRepository(Deposit).find({ where: { status: DepositStatus.PENDING }});
-    } catch(error) {
+    } catch (error) {
         console.error("checkPendingDeposit cron failed");
         console.error(error);
         return;
@@ -18,7 +18,7 @@ export default async () => {
 
     let count = 0;
 
-    for (let d of deposits) {
+    for (const d of deposits) {
         if (d.pendingEndTime.getTime() <= Date.now()) {
             d.status = DepositStatus.WORKING;
 
@@ -36,4 +36,4 @@ export default async () => {
 
     console.log(`Updated ${count} pending deposits`);
 
-}
+};

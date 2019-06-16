@@ -1,59 +1,59 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export default class Order {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    public id: number;
 
     @Column({ type: "float" })
-    open_price: number;
+    public open_price: number;
 
     @Column({ type: "timestamptz", nullable: true })
-    open_time: Date;
+    public open_time: Date;
 
     @Column({ default: "" })
-    symbol: string;
+    public symbol: string;
 
     @Column({ type: "float" })
-    lots: number;
+    public lots: number;
 
     @Column({ type: "float" })
-    swap: number;
+    public swap: number;
 
     @Column({ type: "float" })
-    close_price: number;
+    public close_price: number;
 
     @Column({ type: "float" })
-    stoploss: number;
+    public stoploss: number;
 
     @Column({ type: "float" })
-    takeprofit: number;
+    public takeprofit: number;
 
     @Column()
-    type: number;
+    public type: number;
 
     @Column()
-    ticket: number;
+    public ticket: number;
 
     @Column({ type: "float" })
-    profit: number;
+    public profit: number;
 
     @Column({ type: "timestamptz", nullable: true })
-    close_time: Date;
+    public close_time: Date;
 
     @Column({ type: "float" })
-    close_balance: number;
+    public close_balance: number;
 
     @Column({ type: "float" })
-    open_balance: number;
+    public open_balance: number;
 
     @Column({ type: "float" })
-    commission: number;
+    public commission: number;
 
     @Column({ default: "", nullable: true })
-    comment: string;
+    public comment: string;
 
     @Column({ default: 0 })
-    magic: number;
+    public magic: number;
 }

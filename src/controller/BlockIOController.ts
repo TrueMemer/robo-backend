@@ -1,31 +1,36 @@
-import { Request, Response } from "express-serve-static-core";
-import CryptoTransaction, { TransactionType, TransactionStatus } from "../entity/CryptoTransaction";
+import { ClassMiddleware, Controller, Post } from "@overnightjs/core";
+import axios from "axios";
 import { validate } from "class-validator";
+import { Request, Response } from "express-serve-static-core";
+import * as moment from "moment";
 import { getRepository } from "typeorm";
 import config from "../config/config";
-import axios from "axios";
-import User from "../entity/User";
-import moment = require("moment");
+import CryptoTransaction, { TransactionStatus, TransactionType } from "../entity/CryptoTransaction";
 import Deposit, { DepositStatus } from "../entity/Deposit";
+import User from "../entity/User";
+import { JWTChecker } from "../middlewares/JWTChecker";
 
 const CryptoNames = {
-    "bitcoin": "BTC",
-    "litecoin": "LTC",
-    "dogecoin": "DOGE",
-    "bitcoin_testnet": "BTC",
-    "litecoin_testnet": "LTC",
-    "dogecoin_testnet": "DOGE"
+    bitcoin: "BTC",
+    litecoin: "LTC",
+    dogecoin: "DOGE",
+    bitcoin_testnet: "BTC",
+    litecoin_testnet: "LTC",
+    dogecoin_testnet: "DOGE"
 };
 
-export default class BlockIOController {
+@Controller("/api/payment/crypto")
+@ClassMiddleware([JWTChecker])
+export class BlockIOController {
 
-    static createPayment = async (req: Request, res: Response) => {
-        
+    @Post("createPayment")
+    private async createPayment(req: Request, res: Response) {
+
         const user_id = res.locals.jwtPayload.userId;
 
-        var p: CryptoTransaction = new CryptoTransaction();
+        let p: CryptoTransaction = new CryptoTransaction();
 
-        let { currency, amount_usd } = req.body;
+        const { currency, amount_usd } = req.body;
 
         p.user_id = user_id;
         p.currency = currency;
@@ -36,7 +41,7 @@ export default class BlockIOController {
             return res.status(400).send({
                 msg: "Validation error",
                 code: 400,
-                errors: errors
+                errors
             });
         }
 
@@ -57,7 +62,9 @@ export default class BlockIOController {
         p.dateCreated = new Date(Date.now());
 
         try {
-            r = await axios.get(`https://block.io/api/v2/get_new_address/?api_key=${config.blockio.api_keys[p.currency]}`);
+            r = await axios.get(
+                `https://block.io/api/v2/get_new_address/?api_key=${config.blockio.api_keys[p.currency]}`
+                );
         } catch (error) {
             return res.status(400).send({
                 msg: "This currency is not supported",
@@ -66,8 +73,8 @@ export default class BlockIOController {
             });
         }
 
-        let { status, data } = await r.data;
-        if (status != "success") {
+        const { status, data } = await r.data;
+        if (status !== "success") {
             return res.status(400).send({
                 msg: "This currency is not supported",
                 code: 400,
@@ -81,8 +88,7 @@ export default class BlockIOController {
         // try to save pending transaction
         try {
             p = await getRepository(CryptoTransaction).save(p);
-        }
-        catch (error) {
+        } catch (error) {
             return res.status(500).send({
                 msg: "Failed to save transaction",
                 code: 500
@@ -90,25 +96,25 @@ export default class BlockIOController {
         }
 
         res.status(200).send(p);
-    };
+    }
 
-    static checkPayment = async (req: Request, res: Response) => {
+    @Post("checkPayment")
+    private async checkPayment(req: Request, res: Response) {
 
         const user_id = res.locals.jwtPayload.userId;
 
-        let { uuid } = req.body;
+        const { uuid } = req.body;
         let p: CryptoTransaction;
 
         try {
             p = await getRepository(CryptoTransaction).findOneOrFail(uuid);
-        }
-        catch (error) {
+        } catch (error) {
             console.error(error);
             res.status(404).send();
             return;
         }
 
-        if (p.status != TransactionStatus.PENDING || p.user_id != user_id) {
+        if (p.status !== TransactionStatus.PENDING || p.user_id !== user_id) {
             res.status(400).send();
             return;
         }
@@ -116,19 +122,22 @@ export default class BlockIOController {
         let r;
 
         try {
-            r = await axios.get(`https://block.io/api/v2/get_address_balance/?api_key=${config.blockio.api_keys[p.currency]}&addresses=${p.receive_address}`);
+            r = await axios.get(
+                `https://block.io/api/v2/get_address_balance/?api_key=
+                ${config.blockio.api_keys[p.currency]}&addresses=${p.receive_address}`
+            );
         } catch (error) {
             console.error(error);
             res.status(500).send();
         }
 
-        let { status, data } = await r.data;
-        if (status != "success") {
+        const { status, data } = await r.data;
+        if (status !== "success") {
             res.status(400).send();
             return;
         }
 
-        let f1 = parseFloat(data.available_balance);
+        const f1 = parseFloat(data.available_balance);
         if (Math.abs(f1 - p.amount_currency) >= 0.0000001) {
             res.status(200).send(p);
             return;
@@ -138,7 +147,7 @@ export default class BlockIOController {
 
         try {
             user = await getRepository(User).findOneOrFail(user_id);
-        } catch(error) {
+        } catch (error) {
             console.error(error);
             res.status(500).send();
             return;
@@ -164,32 +173,36 @@ export default class BlockIOController {
         await getRepository(User).save(user);
 
         try {
-            r = await axios.get(`https://block.io/api/v2/archive_addresses/?api_key=${config.blockio.api_keys[p.currency]}&addresses=${p.receive_address}`);
+            r = await axios.get(
+                `https://block.io/api/v2/archive_addresses/?api_key=
+                ${config.blockio.api_keys[p.currency]}&addresses=${p.receive_address}`
+            );
         } catch (error) {
             console.error(error);
             res.status(500).send();
         }
 
         res.status(200).send(p);
-    };
+    }
 
-    static cancelPendingTransaction = async (req: Request, res: Response) => {
+    @Post("cancelPendingPayment")
+    private async cancelPendingTransaction(req: Request, res: Response) {
         const user_id = res.locals.jwtPayload.userId;
 
-        let { uuid } = req.body;
+        const { uuid } = req.body;
 
-        if(!uuid) {
+        if (!uuid) {
             res.status(404).send();
             return;
         }
-        
-        let transaction = await getRepository(CryptoTransaction).find({ where: { id: uuid, user_id: user_id } });
+
+        const transaction = await getRepository(CryptoTransaction).find({ where: { id: uuid, user_id } });
         if (transaction.length < 1) {
             res.status(404).send();
             return;
         }
 
-        if (transaction[0].status != TransactionStatus.PENDING) {
+        if (transaction[0].status !== TransactionStatus.PENDING) {
             res.status(400).send();
             return;
         }
@@ -197,6 +210,6 @@ export default class BlockIOController {
         await getRepository(CryptoTransaction).delete({ id: uuid });
 
         res.status(200).send();
-    };
+    }
 
 }

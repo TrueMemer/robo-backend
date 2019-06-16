@@ -1,14 +1,14 @@
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class VerificationToken {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    public id: number;
 
     @Column()
-    userId: number;
+    public userId: number;
 
     @Column()
-    token: string;
+    public token: string;
 }

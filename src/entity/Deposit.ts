@@ -1,5 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 import { IsNotEmpty, Min } from "class-validator";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 export enum DepositStatus {
     PENDING,
@@ -11,27 +11,27 @@ export enum DepositStatus {
 export default class Deposit {
 
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    public id: string;
 
     @Column()
     @IsNotEmpty()
-    user_id: number;
+    public user_id: number;
 
     @Column()
-    transactionId: string;
+    public transactionId: string;
 
     @Column({ type: "float" })
     @IsNotEmpty()
     @Min(1)
-    amount: number;
+    public amount: number;
 
     @Column({
         type: "enum",
         enum: DepositStatus,
     })
-    status: DepositStatus;
+    public status: DepositStatus;
 
     @Column()
-    pendingEndTime: Date;
+    public pendingEndTime: Date;
 
 }

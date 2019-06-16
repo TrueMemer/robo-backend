@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, Unique, CreateDateColumn, UpdateDateColumn, Double, getRepository, Tree, TreeChildren, TreeParent } from "typeorm";
-
-import { Length, IsNotEmpty, IsEmail } from "class-validator";
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from "bcryptjs";
+import { IsEmail, IsNotEmpty, Length } from "class-validator";
+import * as typeorm from "typeorm";
+import { Column, CreateDateColumn, Entity,
+    PrimaryGeneratedColumn, Tree, TreeChildren, TreeParent, Unique, UpdateDateColumn } from "typeorm";
 import Deposit, { DepositStatus } from "./Deposit";
 
 export enum UserRole {
@@ -12,26 +13,25 @@ export enum UserRole {
 @Entity()
 @Unique(["username"])
 @Unique(["email"])
-@Tree("closure-table")
 export default class User {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    public id: number;
 
     @Column()
     @Length(4, 20)
-    username: string;
+    public username: string;
 
     @Column({ select: false })
     @Length(4, 128)
-    password: string;
+    public password: string;
 
     @Column()
     @IsEmail()
-    email: string;
+    public email: string;
 
     @Column({ default: false })
-    isVerified: boolean;
+    public isVerified: boolean;
 
     @Column({
         type: "enum",
@@ -39,78 +39,75 @@ export default class User {
         default: UserRole.USER
     })
     @IsNotEmpty()
-    role: UserRole;
+    public role: UserRole;
 
     @Column({ type: "float", default: 0.0 })
-    balance: number;
+    public balance: number;
 
     @Column({ type: "float", default: 0.0 })
-    payedAllTime: number;
+    public payedAllTime: number;
 
     @Column({ type: "float", default: 0.0 })
-    workingDeposit: number;
+    public workingDeposit: number;
 
     @Column({ type: "float", default: 0.0 })
-    pendingDeposit: number;
+    public pendingDeposit: number;
 
     @Column({ default: new Date(0), type: "timestamptz" })
-    pendingEndTime: Date;
+    public pendingEndTime: Date;
 
     @Column({ default: "" })
-    bitcoinWallet: string;
+    public bitcoinWallet: string;
 
     @Column({ default: "" })
-    advcashWallet: string;
+    public advcashWallet: string;
 
     @Column({ default: "" })
-    payeerWallet: string;
+    public payeerWallet: string;
 
     @Column({ default: "" })
-    payPin: string;
+    public payPin: string;
 
     @Column()
     @CreateDateColumn()
-    createdAt: Date;
-  
+    public createdAt: Date;
+
     @Column()
     @UpdateDateColumn()
-    updatedAt: Date;
+    public updatedAt: Date;
 
-    profitTotal: number;
+    public profitTotal: number;
 
-    withdrawedTotal: number;
+    public withdrawedTotal: number;
 
-    freeDeposit: number;
+    public freeDeposit: number;
 
-    @TreeChildren()
-    children: User[];
-
-    @TreeParent()
-    parent: User;
-
-    hashPassword() {
+    public hashPassword() {
         this.password = bcrypt.hashSync(this.password, 8);
     }
 
-    checkIfUnencryptedPasswordIsValid(unencryptedPassword: string) {
+    public checkIfUnencryptedPasswordIsValid(unencryptedPassword: string) {
         return bcrypt.compareSync(unencryptedPassword, this.password);
     }
 
-    updateBalance() {
+    public updateBalance() {
         this.balance = this.freeDeposit + this.workingDeposit + this.pendingDeposit;
     }
 
-    async updateDeposits() {
-        const deposits = await getRepository(Deposit).find({ where: { user_id: this.id }, select: ["amount", "status"] });
+    public async updateDeposits() {
+        const deposits = await typeorm.getRepository(Deposit).find(
+            { where: { user_id: this.id }, select: ["amount", "status"]
+        });
 
         let amount_pending = 0;
         let amount_working = 0;
 
-        for (let d of deposits) {
-            if (d.status == DepositStatus.PENDING)
+        for (const d of deposits) {
+            if (d.status === DepositStatus.PENDING) {
                 amount_pending += d.amount;
-            else if (d.status == DepositStatus.WORKING) 
+            } else if (d.status === DepositStatus.WORKING) {
                 amount_working += d.amount;
+            }
         }
 
         this.pendingDeposit = amount_pending;

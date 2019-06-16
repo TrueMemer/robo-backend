@@ -1,32 +1,35 @@
-import { Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { Controller, Delete, Get, Middleware, Patch, Post } from "@overnightjs/core";
 import { validate } from "class-validator";
-
+import * as crypto from "crypto";
+import { Request, Response } from "express";
+import * as nodemailer from "nodemailer";
+import { getRepository } from "typeorm";
+import config from "../config/config";
+import { Referral } from "../entity/Referral";
 import User, { UserRole } from "../entity/User";
 import { VerificationToken } from "../entity/VerificationToken";
+import { JWTChecker } from "../middlewares/JWTChecker";
+import { RoleChecker } from "../middlewares/RoleChecker";
 
-import * as crypto from "crypto";
-import * as nodemailer from "nodemailer";
-import config from "../config/config";
-
+@Controller("api/user")
 export default class UserController {
 
-    static listAll = async (req: Request, res: Response) => {
-        //Get users from database
+    @Get("")
+    @Middleware([JWTChecker, RoleChecker(["ADMIN"])])
+    private async listAll(req: Request, res: Response) {
         const userRepository = getRepository(User);
         const users = await userRepository.find({
-            select: ["id", "username", "role", "email"] //We dont want to send the passwords on response
+            select: ["id", "username", "role", "email"]
         });
 
-        //Send the users object
         res.send(users);
-    };
+    }
 
-    static getOneById = async (req: Request, res: Response) => {
-        //Get the ID from the url
+    @Get(":id([0-9]+)")
+    @Middleware([JWTChecker, RoleChecker(["ADMIN"])])
+    private async getOneById(req: Request, res: Response) {
         const id: number = req.params.id;
 
-        //Get the user from database
         const userRepository = getRepository(User);
         let user;
         try {
@@ -39,11 +42,12 @@ export default class UserController {
         }
 
         res.send(user);
-    };
+    }
 
-    static newUser = async (req: Request, res: Response) => {
+    @Post("")
+    private async newUser(req: Request, res: Response) {
 
-        let { username, password, email, referrer } = req.body;
+        const { username, password, email, referrer } = req.body;
         let user = new User();
         user.username = username;
         user.password = password;
@@ -56,7 +60,7 @@ export default class UserController {
             return res.status(400).send({
                 msg: "Validation error",
                 code: 400,
-                errors: errors
+                errors
             });
         }
 
@@ -72,10 +76,13 @@ export default class UserController {
             });
         }
 
-        let r = await getRepository(User).findOne({ where: { id: parseInt(referrer) } });
+        if (referrer) {
+            const r = new Referral();
 
-        if (r) {
-            r.children.push(user);
+            r.referrer = parseInt(referrer, 10);
+            r.referral = user.id;
+
+            await getRepository(Referral).save(r);
         }
 
         const tokenRepository = getRepository(VerificationToken);
@@ -86,27 +93,34 @@ export default class UserController {
 
         try {
             token = await tokenRepository.save(token);
-        }
-        catch (error) {
+        } catch (error) {
             return res.status(500).send({
                 msg: "Failed",
                 code: 500
             });
         }
 
-        let transporter = nodemailer.createTransport({
+        const transporter = nodemailer.createTransport({
             service: config.mail.service,
             auth: {
                 user: config.mail.username,
                 pass: config.mail.password
             }
         });
-        var mailOptions = { from: 'robofxtrading19@gmail.com', to: user.email, subject: 'Подтверждение почты', text: 'Здравствуйте,\n\n' + 'Пожалуйста перейдите по ссылке для подтверждения аккаунта: \nhttps://robofxtrading.net/confirmation/' + user.email + '/' + token.token + ' .\n' };
+        const mailOptions = {
+            from: "robofxtrading19@gmail.com",
+            to: user.email,
+            subject: "Подтверждение почты",
+            text: "Здравствуйте,\n\n" +
+                "Пожалуйста перейдите по ссылке для подтверждения аккаунта: \nhttps://robofxtrading.net/confirmation/"
+                + user.email
+                + "/"
+                + token.token
+                + " .\n" };
 
         try {
             await transporter.sendMail(mailOptions);
-        }
-        catch (error) {
+        } catch (error) {
             return res.status(500).send({
                 msg: "Failed to send confirmation email. Please contact administrator.",
                 code: 500
@@ -114,17 +128,17 @@ export default class UserController {
         }
 
         res.status(201).send();
-    };
+    }
 
-    static confirmEmail = async (req: Request, res: Response) => {
+    @Get("confirmation")
+    private async confirmEmail(req: Request, res: Response) {
         const token = req.query.token;
 
         let t: VerificationToken;
 
         try {
-            t = <VerificationToken>await getRepository(VerificationToken).findOneOrFail({ token: token })
-        }
-        catch (error) {
+            t = await getRepository(VerificationToken).findOneOrFail({ token }) as VerificationToken;
+        } catch (error) {
             return res.status(404).send({
                 msg: "Not found",
                 code: 404
@@ -135,8 +149,7 @@ export default class UserController {
 
         try {
             user = await getRepository(User).findOneOrFail(t.userId);
-        }
-        catch (error) {
+        } catch (error) {
             res.status(400).send();
             return;
         }
@@ -149,35 +162,31 @@ export default class UserController {
         user.isVerified = true;
         try {
             await getRepository(User).save(user);
-        }
-        catch (error) {
+        } catch (error) {
             res.status(500).send("Failed to verify user. Please contact administrator.");
             return;
         }
 
         res.status(200).send("Successfully verified!");
 
-    };
+    }
 
-    static editUser = async (req: Request, res: Response) => {
-        //Get the ID from the url
+    @Patch(":id([0-9]+)")
+    @Middleware([JWTChecker, RoleChecker(["ADMIN"])])
+    private async editUser(req: Request, res: Response) {
         const id = req.params.id;
 
-        //Get values from the body
         const { username, role, email } = req.body;
 
-        //Try to find user on database
         const userRepository = getRepository(User);
         let user;
         try {
             user = await userRepository.findOneOrFail(id);
         } catch (error) {
-            //If not found, send a 404 response
             res.status(404).send("User not found");
             return;
         }
 
-        //Validate the new values on model
         user.username = username;
         user.role = role;
         user.email = email;
@@ -193,12 +202,13 @@ export default class UserController {
             res.status(409).send("username or email already in use");
             return;
         }
-        //After all send a 204 (no content, but accepted) response
-        res.status(204).send();
-    };
 
-    static deleteUser = async (req: Request, res: Response) => {
-        //Get the ID from the url
+        res.status(204).send();
+    }
+
+    @Delete(":id([0-9]+)")
+    @Middleware([JWTChecker, RoleChecker(["ADMIN"])])
+    private async deleteUser(req: Request, res: Response) {
         const id = req.params.id;
 
         const userRepository = getRepository(User);
@@ -211,7 +221,6 @@ export default class UserController {
         }
         userRepository.delete(id);
 
-        //After all send a 204 (no content, but accepted) response
         res.status(204).send();
-    };
-};
+    }
+}

@@ -1,14 +1,14 @@
-import { NextFunction, Response, Request } from "express-serve-static-core";
+import { NextFunction, Request, Response } from "express-serve-static-core";
 import * as jwt from "jsonwebtoken";
 import config from "../config/config";
 
 export const JWTChecker = (req: Request, res: Response, next: NextFunction) => {
-    const token = <string>req.get("Authorization");
+    const token = req.get("Authorization") as string;
 
     let jwtPayload;
 
     try {
-        jwtPayload = <any>jwt.verify(token, config.jwtSecret);
+        jwtPayload = jwt.verify(token, config.jwtSecret) as any;
         res.locals.jwtPayload = jwtPayload;
     } catch (error) {
         res.status(401).send();
@@ -20,7 +20,7 @@ export const JWTChecker = (req: Request, res: Response, next: NextFunction) => {
         expiresIn: "1h"
     });
     res.setHeader("Authorization", newToken);
-    res.setHeader("Access-Control-Expose-Headers", 'Authorization');
+    res.setHeader("Access-Control-Expose-Headers", "Authorization");
 
     next();
-}
+};

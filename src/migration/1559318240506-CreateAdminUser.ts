@@ -1,10 +1,10 @@
-import {MigrationInterface, QueryRunner, getRepository} from "typeorm";
+import { getRepository, MigrationInterface, QueryRunner } from "typeorm";
 import User, { UserRole } from "../entity/User";
 
 export class CreateAdminUser1559318240506 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
-        let user = new User();
+        const user = new User();
         user.username = "admin";
         user.password = "admin";
         user.email = "admin@test.ru";

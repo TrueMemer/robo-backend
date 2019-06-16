@@ -1,14 +1,20 @@
+import { ClassMiddleware, Controller, Get } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
-import { getRepository, getConnection, getManager } from "typeorm";
-import User from "../entity/User";
+import { getRepository } from "typeorm";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
 import Profit from "../entity/Profit";
+import { Referral } from "../entity/Referral";
+import User from "../entity/User";
 import Withdrawal from "../entity/Withdrawal";
+import { JWTChecker } from "../middlewares/JWTChecker";
 
-export default class ProfileController {
+@Controller("api/profile")
+@ClassMiddleware([JWTChecker])
+export class ProfileController {
 
-    static me = async (req: Request, res: Response) => {
+    @Get("")
+    private async me(req: Request, res: Response) {
         const id = res.locals.jwtPayload.userId;
 
         const rep = getRepository(User);
@@ -16,8 +22,7 @@ export default class ProfileController {
 
         try {
             me = await rep.findOneOrFail(id);
-        }
-        catch (error) {
+        } catch (error) {
             return res.status(401).send({
                 msg: "Unauthorized (expired token)",
                 code: 401
@@ -25,16 +30,14 @@ export default class ProfileController {
         }
         me.profitTotal = 0;
         {
-            let profits = await getRepository(Profit).find({ where: { user_id: me.id }, order: { ticket: "ASC" } });
+            const profits = await getRepository(Profit).find({ where: { user_id: me.id }, order: { ticket: "ASC" } });
 
-            for (let i = 0; i < profits.length; i++) {
-                console.log(me.profitTotal + " + " + profits[i].profit + " = ", (me.profitTotal + profits[i].profit));
-
-                me.profitTotal += profits[i].profit;
+            for (const profit of profits) {
+                me.profitTotal += profit.profit;
             }
         }
 
-        let { sum } = await getRepository(Withdrawal)
+        const { sum } = await getRepository(Withdrawal)
                                 .createQueryBuilder("withdrawal")
                                 .where("withdrawal.user_id = :id", { id: me.id })
                                 .select("sum(withdrawal.amount)")
@@ -45,17 +48,20 @@ export default class ProfileController {
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
 
         res.send(me);
-    };
+    }
 
-    static addBalanceHistory = async (req: Request, res: Response) => {
+    @Get("addBalanceHistory")
+    private async addBalanceHistory(req: Request, res: Response) {
         const id = res.locals.jwtPayload.userId;
 
-        const history = await getRepository(CryptoTransaction).find({ where: { user_id: id }, select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]});
+        const history = await getRepository(CryptoTransaction).find(
+            { where: { user_id: id }, select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]});
 
         return res.status(200).send(history);
     }
 
-    static deposits = async (req: Request, res: Response) => {
+    @Get("getDeposits")
+    private async deposits(req: Request, res: Response) {
         const id = res.locals.jwtPayload.userId;
 
         const deposits = await getRepository(Deposit).find({ where: { user_id: id }});
@@ -63,7 +69,8 @@ export default class ProfileController {
         return res.status(200).send(deposits);
     }
 
-    static profits = async (req: Request, res: Response) => {
+    @Get("getProfits")
+    private async profits(req: Request, res: Response) {
         const id = res.locals.jwtPayload.userId;
 
         const profits = await getRepository(Profit).find({ where: { user_id: id }});
@@ -71,15 +78,21 @@ export default class ProfileController {
         return res.status(200).send(profits);
     }
 
-    static refs = async (req: Request, res: Response) => {
+    @Get("getRefs")
+    private async refs(req: Request, res: Response) {
         const id = res.locals.jwtPayload.userId;
 
         const user = await getRepository(User).findOne(id);
 
-        const manager = getManager();
-        const trees = await manager.getTreeRepository(User).findDescendants(user);
+        const refs = await getRepository(Referral).find({ where: { referrer: user.id } });
 
-        return res.status(200).send(trees);
+        const resp = [];
+
+        for (const r of refs) {
+            resp.push(await getRepository(User).findOne(r.referral, { select: ["id", "username"] }));
+        }
+
+        return res.status(200).send(resp);
     }
 
 }

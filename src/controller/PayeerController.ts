@@ -4,6 +4,7 @@ import * as moment from "moment";
 import { getRepository } from "typeorm";
 import * as uuid from "uuid/v4";
 import Deposit, { DepositStatus } from "../entity/Deposit";
+import Transaction, { TransactionStatus, TransactionType } from "../entity/Transaction";
 
 @Controller("api/payment/payeer")
 export class PayeerController {
@@ -16,19 +17,32 @@ export class PayeerController {
 
     @Post("status")
     private async status(req: Request, res: Response) {
-        // if (!PayeerController.ips.includes(req.ip)) {
-        //     return res.status(401).send();
-        // }
+        const ip = req.ip;
+        console.log(req.ip);
+
+        if (!PayeerController.ips.includes(ip)) {
+             return res.status(401).send();
+        }
 
         if (req.body.m_status === "fail") {
             return res.send(req.body.order_id + "|fail");
         }
 
+        let transaction = new Transaction();
+        transaction.amount_usd = parseFloat(req.body.m_amount);
+        transaction.user_id = parseInt(Buffer.from(req.body.m_desc, "base64").toString(), 10);
+        transaction.status = TransactionStatus.DONE;
+        transaction.type = TransactionType.PAYIN;
+        transaction.dateCreated = new Date(moment().utc().format());
+        transaction.dateDone = new Date(moment().utc().format());
+
+        transaction = await getRepository(Transaction).save(transaction);
+
         let deposit = new Deposit();
-        deposit.user_id = parseInt(Buffer.from(req.body.m_desc, "base64").toString(), 10);
-        deposit.amount = parseFloat(req.body.m_amount);
+        deposit.user_id = transaction.user_id;
+        deposit.amount = transaction.amount_usd;
         deposit.status = DepositStatus.PENDING;
-        deposit.transactionId = uuid();
+        deposit.transactionId = transaction.id;
         deposit.pendingEndTime = new Date(moment().utc().hours(20).minutes(59).add(48, "hours").format());
 
         deposit = await getRepository(Deposit).save(deposit);

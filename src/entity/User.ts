@@ -82,6 +82,11 @@ export default class User {
 
     public freeDeposit: number;
 
+    public referral: string;
+
+    @Column({default: 0})
+    public referral_level: number;
+
     public hashPassword() {
         this.password = bcrypt.hashSync(this.password, 8);
     }

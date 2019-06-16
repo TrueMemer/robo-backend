@@ -5,8 +5,9 @@ import { Request, Response } from "express-serve-static-core";
 import * as moment from "moment";
 import { getRepository } from "typeorm";
 import config from "../config/config";
-import CryptoTransaction, { TransactionStatus, TransactionType } from "../entity/CryptoTransaction";
+import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit, { DepositStatus } from "../entity/Deposit";
+import { TransactionStatus, TransactionType } from "../entity/Transaction";
 import User from "../entity/User";
 import { JWTChecker } from "../middlewares/JWTChecker";
 

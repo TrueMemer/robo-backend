@@ -14,11 +14,11 @@ export class PayeerController {
         "149.202.17.210"
     ];
 
-    @Post()
+    @Post("status")
     private async status(req: Request, res: Response) {
-        if (!PayeerController.ips.includes(req.ip)) {
-            return res.status(401).send();
-        }
+        // if (!PayeerController.ips.includes(req.ip)) {
+        //     return res.status(401).send();
+        // }
 
         if (req.body.m_status === "fail") {
             return res.send(req.body.order_id + "|fail");
@@ -36,14 +36,14 @@ export class PayeerController {
         return res.send(req.body.order_id + "|success");
     }
 
-    @Get()
+    @Get("success")
     private async success(req: Request, res: Response) {
         console.log(req.body);
 
         res.redirect("/addbalance");
     }
 
-    @Get()
+    @Get("fail")
     private async fail(req: Request, res: Response) {
         console.log(req.body);
 

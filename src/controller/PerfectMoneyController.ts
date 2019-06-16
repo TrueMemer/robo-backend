@@ -9,7 +9,7 @@ import Deposit, { DepositStatus } from "../entity/Deposit";
 @Controller("api/payment/pm")
 export class PerfectMoneyController {
 
-    @Post()
+    @Post("status")
     private async status(req: Request, res: Response) {
         let deposit = new Deposit();
         deposit.user_id = parseInt(req.body.USER_ID, 10);
@@ -23,7 +23,7 @@ export class PerfectMoneyController {
         res.send(200);
     }
 
-    @Post()
+    @Post("fail")
     private async fail(req: Request, res: Response) {
         res.send(200);
     }

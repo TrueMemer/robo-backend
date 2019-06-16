@@ -5,7 +5,7 @@ import { getRepository } from "typeorm";
 import * as uuid from "uuid/v4";
 import Deposit, { DepositStatus } from "../entity/Deposit";
 
-@Controller("/api/payment/payeer")
+@Controller("api/payment/payeer")
 export class PayeerController {
 
     private static ips = [
@@ -25,7 +25,7 @@ export class PayeerController {
         }
 
         let deposit = new Deposit();
-        deposit.user_id = parseInt(Base64.decode(req.body.m_desc), 10);
+        deposit.user_id = parseInt(Buffer.from(req.body.m_desc, "base64").toString(), 10);
         deposit.amount = parseFloat(req.body.m_amount);
         deposit.status = DepositStatus.PENDING;
         deposit.transactionId = uuid();

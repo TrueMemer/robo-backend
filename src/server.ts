@@ -20,7 +20,9 @@ export default class RoboServer extends Server {
         this.app.use(compression());
         this.app.use(helmet());
         this.app.use(cors());
-        this.app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "production"));
+        if (process.env.NODE_ENV === "development") {
+            this.app.use(morgan("dev"));
+        }
         this.app.use(bodyParser.json());
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.set("trust proxy", true);

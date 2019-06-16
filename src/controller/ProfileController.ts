@@ -5,6 +5,7 @@ import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
 import Profit from "../entity/Profit";
 import { Referral } from "../entity/Referral";
+import Transaction from "../entity/Transaction";
 import User from "../entity/User";
 import Withdrawal from "../entity/Withdrawal";
 import { JWTChecker } from "../middlewares/JWTChecker";
@@ -59,10 +60,13 @@ export class ProfileController {
     private async addBalanceHistory(req: Request, res: Response) {
         const id = res.locals.jwtPayload.userId;
 
-        const history = await getRepository(CryptoTransaction).find(
+        const cryptoHistory = await getRepository(CryptoTransaction).find(
             { where: { user_id: id }, select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]});
 
-        return res.status(200).send(history);
+        const history = await getRepository(Transaction).find(
+            { where: { user_id: id }, select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]});
+
+        return res.status(200).send(history.concat(cryptoHistory));
     }
 
     @Get("getDeposits")

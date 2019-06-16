@@ -32,6 +32,7 @@ export class PayeerController {
         transaction.amount_usd = parseFloat(req.body.m_amount);
         transaction.user_id = parseInt(Buffer.from(req.body.m_desc, "base64").toString(), 10);
         transaction.status = TransactionStatus.DONE;
+        transaction.currency = "USD";
         transaction.type = TransactionType.PAYIN;
         transaction.dateCreated = new Date(moment().utc().format());
         transaction.dateDone = new Date(moment().utc().format());

@@ -50,6 +50,9 @@ export default class User {
     @Column({ type: "float", default: 0.0 })
     public workingDeposit: number;
 
+    @Column({ default: new Date(0) })
+    public workingDepositTimeEnd: Date;
+
     @Column({ type: "float", default: 0.0 })
     public pendingDeposit: number;
 

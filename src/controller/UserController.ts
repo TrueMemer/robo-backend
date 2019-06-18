@@ -82,7 +82,12 @@ export default class UserController {
             r.referrer = parseInt(referrer, 10);
             r.referral = user.id;
 
+            const referrerUser = await getRepository(User).findOne(r.referrer);
+
+            user.referral = referrerUser.username;
+
             await getRepository(Referral).save(r);
+            user = await getRepository(User).save(user);
         }
 
         const tokenRepository = getRepository(VerificationToken);

@@ -8,12 +8,12 @@ export default {
     blockio: {
         pin: "",
         api_keys: {
-            "litecoin": "",
-            "bitcoin": "",
-            "dogecoin": "",
-            "litecoin_testnet": "",
-            "bitcoin_testnet": "",
-            "dogecoin_testnet": ""
+            litecoin: "",
+            bitcoin: "",
+            dogecoin: "",
+            litecoin_testnet: "",
+            bitcoin_testnet: "",
+            dogecoin_testnet: ""
         }
     },
     payeer: {

@@ -1,8 +1,7 @@
 import * as bcrypt from "bcryptjs";
 import { IsEmail, IsNotEmpty, Length } from "class-validator";
 import * as typeorm from "typeorm";
-import { Column, CreateDateColumn, Entity,
-    PrimaryGeneratedColumn, Tree, TreeChildren, TreeParent, Unique, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 import Deposit, { DepositStatus } from "./Deposit";
 
 export enum UserRole {
@@ -85,6 +84,7 @@ export default class User {
 
     public freeDeposit: number;
 
+    @Column({nullable: true})
     public referral: string;
 
     @Column({default: 0})

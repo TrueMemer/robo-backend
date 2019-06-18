@@ -48,11 +48,6 @@ export class ProfileController {
         me.freeDeposit = me.profitTotal - me.withdrawedTotal;
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
 
-        const referralId = await getRepository(Referral).findOne({ where: { referral: me.id } });
-        if (referralId) {
-            me.referral = (await getRepository(User).findOne(referralId.referrer)).username;
-        }
-
         res.send(me);
     }
 

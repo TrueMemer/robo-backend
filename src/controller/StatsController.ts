@@ -23,6 +23,10 @@ export class StatsController {
         let safetyDepo = 0;
 
         for (const o of orders) {
+            if (o.type === 6) {
+                continue;
+            }
+
             safetyDepo += (10 / 100) * (o.profit + o.swap);
         }
 

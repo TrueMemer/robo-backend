@@ -27,7 +27,12 @@ export class StatsController {
                 continue;
             }
 
-            safetyDepo += (10 / 100) * (o.profit + o.swap);
+            const profit = o.profit + o.swap;
+            if (profit > 0) {
+                safetyDepo += (10 / 100) * profit;
+            } else {
+                safetyDepo += profit;
+            }
         }
 
         const withdrawed = 0;

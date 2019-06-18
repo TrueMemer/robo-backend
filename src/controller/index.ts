@@ -6,3 +6,4 @@ export * from "./LatyPayController";
 export * from "./MT4Controller";
 export * from "./PayeerController";
 export * from "./PerfectMoneyController";
+export * from "./StatsController";

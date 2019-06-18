@@ -1,5 +1,5 @@
 export default {
-    jwtSecret: "bruh",
+    jwtSecret: "bruhMoment",
     mail: {
         service: "gmail",
         username: "robofxtrading19@gmail.com",

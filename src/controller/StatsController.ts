@@ -31,6 +31,7 @@ export class StatsController {
         return res.status(200).send({
             users,
             balance,
+            deposited,
             safetyDepo,
             withdrawed
         });

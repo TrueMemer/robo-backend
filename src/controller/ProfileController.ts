@@ -90,10 +90,21 @@ export class ProfileController {
 
         const refs = await getRepository(Referral).find({ where: { referrer: user.id } });
 
-        const resp = [];
+        const resp: any[] = [];
 
         for (const r of refs) {
-            resp.push(await getRepository(User).findOne(r.referral, { select: ["id", "username"] }));
+            const u: any = await getRepository(User).findOne(r.referral, { select: ["id", "username"] });
+
+            const { income } = await getRepository(Profit)
+                                .createQueryBuilder("profit")
+                                .where("profit.user_id = :id", { id: user.id })
+                                .andWhere("profit.referral_id = :id2", { id2: u.id })
+                                .select("sum(profit.profit)", "income")
+                                .getRawOne();
+
+            u.income = income;
+
+            resp.push(u);
         }
 
         return res.status(200).send(resp);

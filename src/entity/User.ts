@@ -84,6 +84,8 @@ export default class User {
 
     public freeDeposit: number;
 
+    public referralTotalIncome: number;
+
     @Column({nullable: true})
     public referral: string;
 

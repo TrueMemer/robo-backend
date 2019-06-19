@@ -19,7 +19,7 @@ export class ProfileController {
         const id = res.locals.jwtPayload.userId;
 
         const rep = getRepository(User);
-        let me: any;
+        let me: User;
 
         try {
             me = await rep.findOneOrFail(id);
@@ -118,7 +118,14 @@ export class ProfileController {
                                 .select("sum(profit.profit)", "income")
                                 .getRawOne();
 
-            u.income = income;
+            u.income = income != null ? income : 0;
+            u.level = 1;
+
+            const second = await getRepository(Referral).find({ where: { referrer: u.id } });
+
+            for (let s of second) {
+                
+            }
 
             resp.push(u);
         }

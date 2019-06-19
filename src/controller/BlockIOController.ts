@@ -20,7 +20,7 @@ const CryptoNames = {
     dogecoin_testnet: "DOGE"
 };
 
-@Controller("/api/payment/crypto")
+@Controller("api/payment/crypto")
 @ClassMiddleware([JWTChecker])
 export class BlockIOController {
 

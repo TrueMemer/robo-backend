@@ -45,8 +45,8 @@ export class ProfileController {
                                     .select("sum(profit.profit)", "referralTotalIncome")
                                     .getRawOne();
 
-        me.referralTotalIncome = referralTotalIncome;
-        me.profitTotal = ordersTotalIncome;
+        me.referralTotalIncome = referralTotalIncome != null ? referralTotalIncome : 0;
+        me.profitTotal = ordersTotalIncome != null ? ordersTotalIncome : 0;
 
         const { sum } = await getRepository(Withdrawal)
                                 .createQueryBuilder("withdrawal")

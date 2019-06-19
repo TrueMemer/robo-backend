@@ -19,7 +19,7 @@ export class ProfileController {
         const id = res.locals.jwtPayload.userId;
 
         const rep = getRepository(User);
-        let me: User;
+        let me: any;
 
         try {
             me = await rep.findOneOrFail(id);
@@ -37,6 +37,22 @@ export class ProfileController {
                 me.profitTotal += profit.profit;
             }
         }
+
+        const { ordersTotalIncome } = await getRepository(Profit)
+                                    .createQueryBuilder("profit")
+                                    .where("profit.type = '0'")
+                                    .andWhere("profit.user_id = :id", { id: me.id })
+                                    .select("sum(profit.profit)", "ordersTotalIncome")
+                                    .getRawOne();
+
+        const { referralTotalIncome } = await getRepository(Profit)
+                                    .createQueryBuilder("profit")
+                                    .where("profit.type = '1'")
+                                    .andWhere("profit.user_id = :id", { id: me.id })
+                                    .select("sum(profit.profit)", "ordersTotalIncome")
+                                    .getRawOne();
+
+        me.referralTotalIncome = referralTotalIncome;
 
         const { sum } = await getRepository(Withdrawal)
                                 .createQueryBuilder("withdrawal")

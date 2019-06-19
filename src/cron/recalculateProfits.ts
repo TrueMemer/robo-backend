@@ -37,7 +37,8 @@ export default async () => {
                             .createQueryBuilder("order")
                             .addOrderBy("order.ticket", "ASC")
                             .where("order.type != 6")
-                            .andWhere("order.close_balance != 0");
+                            .andWhere("order.close_balance != 0")
+                            .andWhere("order.open_time > :depositDate", { depositDate: deposits[i].pendingEndTime });
 
             if (i === 0) {
                 query.where("order.close_time > :date", { date: deposits[i].pendingEndTime });

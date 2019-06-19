@@ -9,16 +9,15 @@ export default async () => {
 
     const users: User[] = await getRepository(User).find();
 
+    await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(Profit)
+        .execute();
+
     for (const user of users) {
 
         Logger.Imp(`User start [${user.id}] ${user.username}:`);
-
-        await getConnection()
-            .createQueryBuilder()
-            .delete()
-            .from(Profit)
-            .where("user_id = :id", { id: user.id })
-            .execute();
 
         const deposits = await getRepository(Deposit).find(
             { where: { user_id: user.id, status: DepositStatus.WORKING }, order: { pendingEndTime: "ASC" }

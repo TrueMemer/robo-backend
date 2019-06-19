@@ -117,7 +117,7 @@ export default class UserController {
             to: user.email,
             subject: "Подтверждение почты",
             text: "Здравствуйте,\n\n" +
-                "Пожалуйста перейдите по ссылке для подтверждения аккаунта: \nhttps://robofxtrading.net/confirmation/"
+                "Пожалуйста перейдите по ссылке для подтверждения аккаунта: \nhttp://robofxtrading.net/confirmation/"
                 + user.email
                 + "/"
                 + token.token

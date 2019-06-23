@@ -10,6 +10,7 @@ import Transaction from "../entity/Transaction";
 import User from "../entity/User";
 import Withdrawal from "../entity/Withdrawal";
 import { JWTChecker } from "../middlewares/JWTChecker";
+import { toDataURL } from "qrcode";
 
 @Controller("api/profile")
 @ClassMiddleware([JWTChecker])
@@ -70,14 +71,19 @@ export class ProfileController {
 
         user.twofa = true;
 
+        let url;
+
         if (user.twofaSecret === null) {
-            user.twofaSecret = generateSecret({ length: 20 }).base32;
+            let secret = generateSecret({ length: 20 });
+            user.twofaSecret = secret.base32;
+
+            url = await toDataURL(secret.otpauth_url);
         }
 
         user = await getRepository(User).save(user);
 
         return res.status(200).send({
-            secret: user.twofaSecret
+            secret: url
         });
     }
 

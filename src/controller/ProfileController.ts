@@ -29,7 +29,6 @@ export class ProfileController {
                 code: 401
             });
         }
-        
 
         const { ordersTotalIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
@@ -103,7 +102,9 @@ export class ProfileController {
         const resp: any[] = [];
 
         for (const r of refs) {
-            const u: any = await getRepository(User).findOne(r.referral, { select: ["id", "username"] });
+            const u: User = await getRepository(User).findOne(r.referral);
+
+            const ref1: any = {};
 
             const { income } = await getRepository(Profit)
                                 .createQueryBuilder("profit")
@@ -112,14 +113,19 @@ export class ProfileController {
                                 .select("sum(profit.profit)", "income")
                                 .getRawOne();
 
-            u.income = income != null ? income : 0;
-            u.level = 1;
+            ref1.workingDepo = u.workingDeposit;
+            ref1.username = u.username;
+            ref1.id = u.id;
+            ref1.income = income != null ? income : 0;
+            ref1.level = 1;
 
             const second = await getRepository(Referral).find({ where: { referrer: u.id } });
 
             for (const s of second) {
 
-                const u2: any = await getRepository(User).findOne(s.referral, { select: ["id", "username"] });
+                const u2: User = await getRepository(User).findOne(s.referral);
+
+                const ref2: any = {};
 
                 const { secondIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
@@ -128,13 +134,18 @@ export class ProfileController {
                                     .select("sum(profit.profit)", "income")
                                     .getRawOne();
 
-                u2.income = secondIncome != null ? secondIncome : 0;
-                u2.level = 2;
+                const workingDepo2 = await u2.getFreeDeposit();
 
-                resp.push(u2);
+                ref2.workingDepo = u.workingDeposit;
+                ref2.username = u2.username;
+                ref2.id = u2.id;
+                ref2.income = secondIncome != null ? secondIncome : 0;
+                ref2.level = 2;
+
+                resp.push(ref2);
             }
 
-            resp.push(u);
+            resp.push(ref1);
         }
 
         return res.status(200).send(resp);

@@ -1,8 +1,11 @@
 import * as bcrypt from "bcryptjs";
 import { IsEmail, IsNotEmpty, Length } from "class-validator";
 import * as typeorm from "typeorm";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity,
+    getRepository, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 import Deposit, { DepositStatus } from "./Deposit";
+import Profit from "./Profit";
+import Withdrawal from "./Withdrawal";
 
 export enum UserRole {
     ADMIN = "ADMIN",
@@ -98,6 +101,36 @@ export default class User {
 
     public checkIfUnencryptedPasswordIsValid(unencryptedPassword: string) {
         return bcrypt.compareSync(unencryptedPassword, this.password);
+    }
+
+    public async getFreeDeposit() {
+        const { ordersTotalIncome } = await getRepository(Profit)
+                .createQueryBuilder("profit")
+                .where("profit.type = '0'")
+                .andWhere("profit.user_id = :id", { id: this.id })
+                .select("sum(profit.profit)", "ordersTotalIncome")
+                .getRawOne();
+
+        const { referralTotalIncome } = await getRepository(Profit)
+                .createQueryBuilder("profit")
+                .where("profit.type = '1'")
+                .andWhere("profit.user_id = :id", { id: this.id })
+                .select("sum(profit.profit)", "referralTotalIncome")
+                .getRawOne();
+
+        this.referralTotalIncome = referralTotalIncome != null ? referralTotalIncome : 0;
+        this.profitTotal = ordersTotalIncome != null ? ordersTotalIncome : 0;
+
+        const { sum } = await getRepository(Withdrawal)
+            .createQueryBuilder("withdrawal")
+            .where("withdrawal.user_id = :id", { id: this.id })
+            .select("sum(withdrawal.amount)")
+            .getRawOne();
+
+        this.withdrawedTotal = sum != null ? sum : 0;
+        this.freeDeposit = (this.referralTotalIncome + this.profitTotal) - this.withdrawedTotal;
+
+        return this.freeDeposit;
     }
 
     public updateBalance() {

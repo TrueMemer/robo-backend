@@ -7,6 +7,11 @@ export enum DepositStatus {
     EXPIRED
 }
 
+export enum DepositType {
+    INVEST,
+    REINVEST
+}
+
 @Entity()
 export default class Deposit {
 
@@ -30,6 +35,13 @@ export default class Deposit {
         enum: DepositStatus,
     })
     public status: DepositStatus;
+
+    @Column({
+        type: "enum",
+        enum: DepositType,
+        default: DepositType.INVEST
+    })
+    public type: DepositType;
 
     @Column()
     public pendingEndTime: Date;

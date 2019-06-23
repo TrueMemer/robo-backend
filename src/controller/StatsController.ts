@@ -13,7 +13,7 @@ export class StatsController {
 
         const users = await getRepository(User).count();
         const orders = await getRepository(Order).find(
-            { order: { ticket: "DESC", close_time: "DESC" } });
+            { order: { close_balance: "DESC", close_time: "DESC", open_time: "ASC" } });
         const balance = orders[0].close_balance;
         const { deposited } = await getRepository(Deposit)
                                 .createQueryBuilder("deposit")

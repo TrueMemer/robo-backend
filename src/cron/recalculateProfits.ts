@@ -36,9 +36,9 @@ export default async () => {
             const query = await getRepository(Order)
                             .createQueryBuilder("order")
                             .addOrderBy("order.ticket", "ASC")
-                            .where("order.type != 6")
+                            .where("order.type != '6'")
                             .andWhere("order.close_balance != 0")
-                            .andWhere("order.open_time > :depositDate", { depositDate: deposits[i].pendingEndTime });
+                            .andWhere("order.close_time != '1970-01-01 00:00:00+00'::date");
 
             if (i === 0) {
                 query.where("order.close_time > :date", { date: deposits[i].pendingEndTime });
@@ -66,6 +66,11 @@ export default async () => {
 
                 if (order.type as number === 6) {
                     Logger.Warn(`Order ${order.ticket} is type 6, ignoring...`);
+                    continue;
+                }
+
+                if (order.open_time < deposits[0].pendingEndTime) {
+                    Logger.Warn(`Orders open time is lesser than first deposit time. Ignoring...`);
                     continue;
                 }
 

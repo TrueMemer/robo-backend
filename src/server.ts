@@ -10,7 +10,6 @@ import { createConnection } from "typeorm";
 
 import * as controllers from "./controller";
 import checkPendingDeposit from "./cron/checkPendingDeposit";
-import recalculateProfits from "./cron/recalculateProfits";
 
 export default class RoboServer extends Server {
 
@@ -39,9 +38,7 @@ export default class RoboServer extends Server {
     }
 
     private setupDatabase() {
-        createConnection().then(() => {
-            recalculateProfits();
-        });
+        createConnection();
     }
 
     private setupControllers() {

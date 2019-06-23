@@ -65,6 +65,15 @@ export default class User {
     public bitcoinWallet: string;
 
     @Column({ default: "" })
+    public litecoinWallet: string;
+
+    @Column({ default: "" })
+    public dogecoinWallet: string;
+
+    @Column({ default: "" })
+    public pwWallet: string;
+
+    @Column({ default: "" })
     public advcashWallet: string;
 
     @Column({ default: "" })
@@ -72,6 +81,12 @@ export default class User {
 
     @Column({ default: "" })
     public payPin: string;
+
+    @Column({ default: false })
+    public twofa: boolean;
+
+    @Column({ nullable: true })
+    public twofaSecret: string;
 
     @Column()
     @CreateDateColumn()

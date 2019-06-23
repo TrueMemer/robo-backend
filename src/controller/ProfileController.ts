@@ -1,5 +1,6 @@
-import { ClassMiddleware, Controller, Get } from "@overnightjs/core";
+import { ClassMiddleware, Controller, Get, Patch, Post } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
+import { generateSecret, totp } from "speakeasy";
 import { getRepository } from "typeorm";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
@@ -58,6 +59,88 @@ export class ProfileController {
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
 
         res.send(me);
+    }
+
+    @Post("enable-2fa")
+    private async enable2FA(req: Request, res: Response) {
+
+        const id = res.locals.jwtPayload.userId;
+
+        let user = await getRepository(User).findOne(id);
+
+        user.twofa = true;
+
+        if (user.twofaSecret === null) {
+            user.twofaSecret = generateSecret({ length: 20 }).base32;
+        }
+
+        user = await getRepository(User).save(user);
+
+        return res.status(200).send({
+            secret: user.twofaSecret
+        });
+    }
+
+    @Post("disable-2fa")
+    private async disable2FA(req: Request, res: Response) {
+
+        const id = res.locals.jwtPayload.userId;
+
+        const { code } = req.body;
+
+        if (!code) {
+            return res.status(401).send({
+                msg: "No 2FA code",
+                code: 401
+            });
+        }
+
+        let user = await getRepository(User).findOne(id);
+
+        if (!totp.verify({ secret: user.twofaSecret, token: code, encoding: "base32", window: 0 })) {
+            return res.status(401).send({
+                msg: "Invalid 2FA code",
+                code: 401
+            });
+        }
+
+        user.twofa = false;
+
+        user = await getRepository(User).save(user);
+
+        return res.status(200).send();
+    }
+
+    @Patch("patch")
+    private async patch(req: Request, res: Response) {
+
+        const id = res.locals.jwtPayload.userId;
+
+        const user = await getRepository(User).findOne(id);
+
+        if (req.body.bitcoinWallet !== undefined) {
+            user.bitcoinWallet = req.body.bitcoinWallet;
+        }
+
+        if (req.body.payeerWallet !== undefined) {
+            user.payeerWallet = req.body.payeerWallet;
+        }
+
+        if (req.body.litecoinWallet !== undefined) {
+            user.litecoinWallet = req.body.litecoinWallet;
+        }
+
+        if (req.body.dogecoinWallet !== undefined) {
+            user.dogecoinWallet = req.body.dogecoinWallet;
+        }
+
+        if (req.body.pwWallet !== undefined) {
+            user.pwWallet = req.body.pwWallet;
+        }
+
+        await getRepository(User).save(user);
+
+        return res.status(200).send();
     }
 
     @Get("addBalanceHistory")

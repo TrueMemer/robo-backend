@@ -63,7 +63,9 @@ export class BlockIOController {
         p.dateCreated = new Date(Date.now());
 
         try {
+            /* tslint:disable max-line-length */
             r = await axios.get(`https://block.io/api/v2/get_new_address/?api_key=${config.blockio.api_keys[p.currency]}`);
+            /* tslint:enable max-line-length */
         } catch (error) {
             return res.status(400).send({
                 msg: "This currency is not supported",
@@ -121,7 +123,9 @@ export class BlockIOController {
         let r;
 
         try {
+            /* tslint:disable max-line-length */
             r = await axios.get(`https://block.io/api/v2/get_address_balance/?api_key=${config.blockio.api_keys[p.currency]}&addresses=${p.receive_address}`);
+            /* tslint:enable max-line-length */
         } catch (error) {
             console.error(error);
             res.status(500).send();
@@ -169,7 +173,9 @@ export class BlockIOController {
         await getRepository(User).save(user);
 
         try {
+            /* tslint:disable max-line-length */
             r = await axios.get(`https://block.io/api/v2/archive_addresses/?api_key=${config.blockio.api_keys[p.currency]}&addresses=${p.receive_address}`);
+            /* tslint:enable max-line-length */
         } catch (error) {
             console.error(error);
             res.status(500).send();

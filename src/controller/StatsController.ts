@@ -20,16 +20,13 @@ export class StatsController {
                                 .select("sum(deposit.amount)", "deposited")
                                 .getRawOne();
 
-        let safetyDepo = 0;
+        const { ordersTotal } = await getRepository(Order)
+                                    .createQueryBuilder("order")
+                                    .select("sum(order.profit)", "ordersTotal")
+                                    .where("order.type != '6'")
+                                    .getRawOne();
 
-        for (const o of orders) {
-            if (o.type === 6) {
-                continue;
-            }
-
-            const profit = o.profit + o.swap;
-            safetyDepo += (10 / 100) * profit;
-        }
+        const safetyDepo = ordersTotal != null ? (10 / 100) * ordersTotal : 0;
 
         const withdrawed = 0;
 

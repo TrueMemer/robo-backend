@@ -1,5 +1,5 @@
 import { IsNotEmpty, Min } from "class-validator";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 export enum WithdrawalType {
     WITHDRAW,
@@ -40,4 +40,7 @@ export default class Withdrawal {
         enum: WithdrawalStatus
     })
     public status: WithdrawalStatus;
+
+    @CreateDateColumn()
+    public created: Date;
 }

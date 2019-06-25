@@ -1,6 +1,7 @@
 import { ClassMiddleware, Controller, Post } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
-import moment = require("moment");
+import * as moment from "moment";
+import { totp } from "speakeasy";
 import { getRepository } from "typeorm";
 import Deposit, { DepositStatus, DepositType } from "../entity/Deposit";
 import User from "../entity/User";
@@ -13,8 +14,19 @@ export class ReinvestController {
 
     @Post("")
     private async reinvest(req: Request, res: Response) {
+        const { code } = req.body;
+
         const id = res.locals.jwtPayload.userId;
         const user = await getRepository(User).findOne(id);
+
+        if (user.twofa) {
+            if (!totp.verify({ secret: user.twofaSecret, token: code, encoding: "base32", window: 0 })) {
+                return res.status(401).send({
+                    msg: "Invalid 2FA code",
+                    code: 401
+                });
+            }
+        }
 
         const { amount } = req.body;
 

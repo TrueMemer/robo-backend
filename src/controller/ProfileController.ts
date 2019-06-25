@@ -1,16 +1,16 @@
 import { ClassMiddleware, Controller, Get, Patch, Post } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
-import { generateSecret, totp } from "speakeasy";
+import { toDataURL } from "qrcode";
+import { generateSecret, otpauthURL, totp } from "speakeasy";
 import { getRepository } from "typeorm";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
 import Profit from "../entity/Profit";
 import { Referral } from "../entity/Referral";
-import Transaction from "../entity/Transaction";
+import Transaction, { TransactionType } from "../entity/Transaction";
 import User from "../entity/User";
-import Withdrawal from "../entity/Withdrawal";
+import Withdrawal, { WithdrawalType } from "../entity/Withdrawal";
 import { JWTChecker } from "../middlewares/JWTChecker";
-import { toDataURL } from "qrcode";
 
 @Controller("api/profile")
 @ClassMiddleware([JWTChecker])
@@ -69,15 +69,20 @@ export class ProfileController {
 
         let user = await getRepository(User).findOne(id);
 
-        user.twofa = true;
-
         let url;
 
         if (user.twofaSecret === null) {
-            let secret = generateSecret({ length: 20 });
+            const secret = generateSecret({ length: 20 });
+            url = otpauthURL({ secret: secret.base32,
+                label: `robofxtrading.net (${user.username})`, encoding: "base32" });
             user.twofaSecret = secret.base32;
 
-            url = await toDataURL(secret.otpauth_url);
+            url = await toDataURL(url);
+        } else {
+            url = otpauthURL({ secret: user.twofaSecret,
+                label: `robofxtrading.net (${user.username})`, encoding: "base32" });
+
+            url = await toDataURL(url);
         }
 
         user = await getRepository(User).save(user);
@@ -85,6 +90,42 @@ export class ProfileController {
         return res.status(200).send({
             secret: url
         });
+    }
+
+    @Post("confirm-2fa")
+    private async confirm2FA(req: Request, res: Response) {
+        const id = res.locals.jwtPayload.userId;
+
+        const { code } = req.body;
+
+        if (!code || code === "") {
+            return res.status(400).send({
+                msg: "Invalid 2FA code",
+                code: 400
+            });
+        }
+
+        const user = await getRepository(User).findOne(id);
+
+        if (user.twofa) {
+            return res.status(400).send({
+                msg: "2FA already enabled",
+                code: 400
+            });
+        }
+
+        if (!totp.verify({ secret: user.twofaSecret, token: code, encoding: "base32", window: 0 })) {
+            return res.status(400).send({
+                msg: "Invalid 2FA code",
+                code: 400
+            });
+        }
+
+        user.twofa = true;
+
+        await getRepository(User).save(user);
+
+        res.status(200).send();
     }
 
     @Post("disable-2fa")
@@ -111,6 +152,7 @@ export class ProfileController {
         }
 
         user.twofa = false;
+        user.twofaSecret = null;
 
         user = await getRepository(User).save(user);
 
@@ -154,10 +196,16 @@ export class ProfileController {
         const id = res.locals.jwtPayload.userId;
 
         const cryptoHistory = await getRepository(CryptoTransaction).find(
-            { where: { user_id: id }, select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]});
+            { where:
+                { user_id: id, type: TransactionType.PAYIN }, 
+                select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]
+            });
 
         const history = await getRepository(Transaction).find(
-            { where: { user_id: id }, select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]});
+            { where:
+                { user_id: id, type: TransactionType.PAYIN }, 
+                select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]
+            });
 
         return res.status(200).send(history.concat(cryptoHistory));
     }
@@ -238,6 +286,28 @@ export class ProfileController {
         }
 
         return res.status(200).send(resp);
+    }
+
+    @Get("getWithdraws")
+    private async withdraws(req: Request, res: Response) {
+        const id = res.locals.jwtPayload.userId;
+
+        const withdraws = await getRepository(Withdrawal).find({
+            where: { user_id: id, type: WithdrawalType.WITHDRAW }
+        });
+
+        return res.status(200).send(withdraws);
+    }
+
+    @Get("getReinvests")
+    private async reinvests(req: Request, res: Response) {
+        const id = res.locals.jwtPayload.userId;
+
+        const reinvests = await getRepository(Withdrawal).find({
+            where: { user_id: id, type: WithdrawalType.REINVEST }
+        });
+
+        return res.status(200).send(reinvests);
     }
 
 }

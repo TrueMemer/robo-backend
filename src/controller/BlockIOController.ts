@@ -9,16 +9,8 @@ import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit, { DepositStatus } from "../entity/Deposit";
 import { TransactionStatus, TransactionType } from "../entity/Transaction";
 import User from "../entity/User";
+import CryptoNames from "../helpers/CryptoNames";
 import { JWTChecker } from "../middlewares/JWTChecker";
-
-const CryptoNames = {
-    bitcoin: "BTC",
-    litecoin: "LTC",
-    dogecoin: "DOGE",
-    bitcoin_testnet: "BTC",
-    litecoin_testnet: "LTC",
-    dogecoin_testnet: "DOGE"
-};
 
 @Controller("api/payment/crypto")
 @ClassMiddleware([JWTChecker])

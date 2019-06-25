@@ -7,7 +7,7 @@ import { getRepository } from "typeorm";
 import config from "../config/config";
 import { Referral } from "../entity/Referral";
 import User, { UserRole } from "../entity/User";
-import { VerificationToken } from "../entity/VerificationToken";
+import { VerificationToken, VerificationTokenType } from "../entity/VerificationToken";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import { RoleChecker } from "../middlewares/RoleChecker";
 
@@ -142,7 +142,8 @@ export default class UserController {
         let t: VerificationToken;
 
         try {
-            t = await getRepository(VerificationToken).findOneOrFail({ token }) as VerificationToken;
+            t = await getRepository(VerificationToken).findOneOrFail(
+                { token, type: VerificationTokenType.EMAIL }) as VerificationToken;
         } catch (error) {
             return res.status(404).send({
                 msg: "Not found",

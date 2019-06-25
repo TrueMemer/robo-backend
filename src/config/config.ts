@@ -14,7 +14,8 @@ export default {
             litecoin_testnet: "b955-1d92-6994-a61d",
             bitcoin_testnet: "f751-a9f7-5545-09b4",
             dogecoin_testnet: "eaca-9893-e20d-610a"
-        }
+        },
+        bitcoin_wallet: "3CzEQKqreBT83DUeSDNNeG1F9bWDLNGZpL"
     },
     payeer: {
        secret_key: "CZagstja",

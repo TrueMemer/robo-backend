@@ -115,7 +115,7 @@ export class ProfileController {
             });
         }
 
-        if (!totp.verify({ secret: user.twofaSecret, token: code, encoding: "base32", window: 0 })) {
+        if (!totp.verify({ secret: user.twofaSecret, token: code, encoding: "base32" })) {
             return res.status(400).send({
                 msg: "Invalid 2FA code",
                 code: 400

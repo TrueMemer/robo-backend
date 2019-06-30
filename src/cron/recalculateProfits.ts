@@ -5,6 +5,16 @@ import Order from "../entity/Order";
 import Profit, { ProfitType } from "../entity/Profit";
 import User from "../entity/User";
 
+export const ReferralProfits = [
+    [0.25, 0.25],
+    [0.25, 0.25, 0.25],
+    [0.5, 0.25, 0.25],
+    [0.5, 0.5, 0.25],
+    [0.75, 0.5, 0.25],
+    [1, 0.5, 0.25],
+    [1, 0.75, 0.25]
+];
+
 export default async () => {
 
     const users: User[] = await getRepository(User).find();
@@ -83,6 +93,7 @@ export default async () => {
                 profit.workingDeposit = workingDep;
                 Logger.Imp(`[${order.ticket}]: WorkingDep: ${profit.workingDeposit}`);
                 profit.profit = ((order.profit + order.swap) * profit.depositFactor) / 2;
+                profit.ticket = order.ticket;
                 Logger.Imp(`[${order.ticket}]: Profit: ${profit.profit}`);
 
                 profit = await getRepository(Profit).save(profit);
@@ -97,7 +108,8 @@ export default async () => {
 
                         p1.type = ProfitType.REFERRALS;
                         p1.referral_id = user.id;
-                        p1.profit = (0.25 / 100) * profit.profit;
+                        p1.ticket = order.ticket;
+                        p1.profit = (ReferralProfits[user.referral_level][0] / 100) * profit.profit;
                         Logger.Imp(`Referral 1 level profit: ${p1.profit}`);
                         p1.user_id = referrer.id;
 
@@ -116,11 +128,22 @@ export default async () => {
 
                                 p2.type = ProfitType.REFERRALS;
                                 p2.referral_id = referrer.id;
-                                p2.profit = (0.25 / 100) * p1.profit;
+                                p2.ticket = order.ticket;
+                                p2.profit = (ReferralProfits[user.referral_level][1] / 100) * p1.profit;
                                 Logger.Imp(`Referral 2 level profit: ${p2.profit}`);
                                 p2.user_id = referrer2.id;
 
                                 p2 = await getRepository(Profit).save(p2);
+                            }
+
+                            if (referrer2.referral && user.referral_level > 0) {
+                                const referrer3 = await getRepository(User).find({
+                                    where: { username: referrer2.referral }
+                                });
+
+                                if (referrer3) {
+                                    
+                                }
                             }
                         }
                     }

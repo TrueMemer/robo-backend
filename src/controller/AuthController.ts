@@ -1,9 +1,11 @@
 import { Controller, Middleware, Post } from "@overnightjs/core";
 import { validate } from "class-validator";
 import { Request, Response } from "express";
+import * as geoip from "geoip-country";
 import { sign } from "jsonwebtoken";
 import { getRepository } from "typeorm";
 import config from "../config/config";
+import AuthorizationEntry from "../entity/AuthorizationEntry";
 import User from "../entity/User";
 import { JWTChecker } from "../middlewares/JWTChecker";
 
@@ -47,6 +49,18 @@ export class AuthController {
                 code: 401
             });
         }
+
+        const e = new AuthorizationEntry();
+        e.user_id = user.id;
+        let ip = req.ip;
+        if (ip.substr(0, 7) === "::ffff:") {
+            ip = ip.substr(7);
+        }
+        e.ip = ip;
+        const country = geoip.lookup(e.ip);
+        e.country = country != null ? country.country : "Неизвестно";
+
+        await getRepository(AuthorizationEntry).save(e);
 
         const token = sign(
         { userId: user.id, username: user.username },

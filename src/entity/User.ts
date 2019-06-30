@@ -88,6 +88,12 @@ export default class User {
     @Column({ nullable: true })
     public twofaSecret: string;
 
+    @Column({ default: 0 })
+    public bonus: number;
+
+    @Column({ default: 0 })
+    public bonusLevel: number;
+
     @Column()
     @CreateDateColumn()
     public createdAt: Date;

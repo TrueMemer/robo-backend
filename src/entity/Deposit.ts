@@ -1,5 +1,6 @@
 import { IsNotEmpty, Min } from "class-validator";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, AfterInsert, getRepository } from "typeorm";
+import User from "./User";
 
 export enum DepositStatus {
     PENDING,
@@ -45,5 +46,23 @@ export default class Deposit {
 
     @Column()
     public pendingEndTime: Date;
+
+    @CreateDateColumn({ nullable: true })
+    public created: Date;
+
+    @AfterInsert()
+    public async calcucateBonus() {
+
+        const user = await getRepository(User).findOne(this.user_id);
+
+        if (!user) { return; }
+
+        if (user.workingDeposit >= user.bonusLevel) {
+            user.bonus += 1;
+        }
+
+        await getRepository(User).save(user);
+
+    }
 
 }

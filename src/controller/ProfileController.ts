@@ -3,6 +3,7 @@ import { Request, Response } from "express-serve-static-core";
 import { toDataURL } from "qrcode";
 import { generateSecret, otpauthURL, totp } from "speakeasy";
 import { getRepository } from "typeorm";
+import AuthorizationEntry from "../entity/AuthorizationEntry";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit from "../entity/Deposit";
 import Profit from "../entity/Profit";
@@ -252,6 +253,7 @@ export class ProfileController {
 
             ref1.workingDepo = u.workingDeposit;
             ref1.username = u.username;
+            ref1.referrer = u.referral;
             ref1.id = u.id;
             ref1.income = income != null ? income : 0;
             ref1.level = 1;
@@ -273,13 +275,42 @@ export class ProfileController {
 
                 const workingDepo2 = await u2.getFreeDeposit();
 
-                ref2.workingDepo = u.workingDeposit;
+                ref2.workingDepo = u2.workingDeposit;
                 ref2.username = u2.username;
+                ref2.referrer = u2.referral;
                 ref2.id = u2.id;
                 ref2.income = secondIncome != null ? secondIncome : 0;
                 ref2.level = 2;
 
                 resp.push(ref2);
+
+                const third = await getRepository(Referral).find({ where: { referrer: u2.id } });
+
+                for (const t of third) {
+
+                    const u3: User = await getRepository(User).findOne(t.referral);
+
+                    const ref3: any = {};
+
+                    const { thirdIncome } = await getRepository(Profit)
+                                        .createQueryBuilder("profit")
+                                        .where("profit.user_id = :id", { id: u2.id })
+                                        .andWhere("profit.referral_id = :id2", { id2: u3.id })
+                                        .select("sum(profit.profit)", "income")
+                                        .getRawOne();
+    
+                    const workingDepo3 = await u3.getFreeDeposit();
+    
+                    ref3.workingDepo = u3.workingDeposit;
+                    ref3.username = u3.username;
+                    ref3.referrer = u3.referral;
+                    ref3.id = u3.id;
+                    ref3.income = thirdIncome != null ? thirdIncome : 0;
+                    ref3.level = 3;
+    
+                    resp.push(ref3);
+
+                }
             }
 
             resp.push(ref1);
@@ -308,6 +339,17 @@ export class ProfileController {
         });
 
         return res.status(200).send(reinvests);
+    }
+
+    @Get("getAuthorizations")
+    private async authorizations(req: Request, res: Response) {
+        const id = res.locals.jwtPayload.userId;
+
+        const auth = await getRepository(AuthorizationEntry).find({
+            where: { user_id: id }
+        });
+
+        return res.status(200).send(auth);
     }
 
 }

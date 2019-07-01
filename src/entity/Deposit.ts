@@ -1,6 +1,7 @@
 import { IsNotEmpty, Min } from "class-validator";
 import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, AfterInsert, getRepository } from "typeorm";
 import User from "./User";
+import Profit from "./Profit";
 
 export enum DepositStatus {
     PENDING,
@@ -58,7 +59,28 @@ export default class Deposit {
         if (!user) { return; }
 
         if (user.workingDeposit >= user.bonusLevel) {
-            user.bonus += 1;
+            const profit = new Profit();
+
+            profit.user_id = this.user_id;
+            profit.profit = 1;
+
+            await getRepository(Profit).save(profit);
+
+            user.bonusLevel += 1000;
+
+            const referral = await getRepository(User).findOne({
+                where: { username: user.referral }
+            });
+
+            if (referral) {
+                const p = new Profit();
+
+                p.profit = 1;
+                p.user_id = referral.id;
+                p.referral_id = user.id;
+
+                await getRepository(Profit).save(p);
+            }
         }
 
         await getRepository(User).save(user);

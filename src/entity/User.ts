@@ -145,11 +145,20 @@ export default class User {
         const { sum } = await getRepository(Withdrawal)
             .createQueryBuilder("withdrawal")
             .where("withdrawal.user_id = :id", { id: this.id })
+            .andWhere("withdrawal.type = '0'")
             .select("sum(withdrawal.amount)")
             .getRawOne();
 
+        const { reinvestedTotal } = await getRepository(Withdrawal)
+                                        .createQueryBuilder("withdrawal")
+                                        .where("withdrawal.user_id = :id", { id: this.id })
+                                        .andWhere("withdrawal.type = '1'")
+                                        .select("sum(withdrawal.amount)", "reinvestedTotal")
+                                        .getRawOne();
+
         this.withdrawedTotal = sum != null ? sum : 0;
-        this.freeDeposit = (this.referralTotalIncome + this.profitTotal) - this.withdrawedTotal;
+        this.freeDeposit = (this.referralTotalIncome + this.profitTotal) -
+            (this.withdrawedTotal + reinvestedTotal != null ? reinvestedTotal : 0);
 
         return this.freeDeposit;
     }

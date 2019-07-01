@@ -84,13 +84,21 @@ export default async () => {
                     continue;
                 }
 
+                let { workingDepo } = await getRepository(Deposit)
+                                        .createQueryBuilder("deposit")
+                                        .select("sum(amount)", "workingDepo")
+                                        .where("deposit.user_id = :uid", { uid: user.id })
+                                        .andWhere("deposit.status = '1'")
+                                        .andWhere("deposit.pendingEndTime < :date", { date: order.open_time })
+                                        .getRawOne();
+
                 let profit = new Profit();
 
                 profit.user_id = user.id;
                 profit.ticket = order.ticket;
-                profit.depositFactor = workingDep / order.open_balance;
+                profit.depositFactor = workingDepo / order.open_balance;
                 Logger.Imp(`[${order.ticket}]: DepositFactor: ${profit.depositFactor}`);
-                profit.workingDeposit = workingDep;
+                profit.workingDeposit = workingDepo;
                 Logger.Imp(`[${order.ticket}]: WorkingDep: ${profit.workingDeposit}`);
                 profit.profit = ((order.profit + order.swap) * profit.depositFactor) / 2;
                 profit.ticket = order.ticket;
@@ -127,7 +135,7 @@ export default async () => {
                                 let p2 = new Profit();
 
                                 p2.type = ProfitType.REFERRALS;
-                                p2.referral_id = referrer.id;
+                                p2.referral_id = user.id;
                                 p2.ticket = order.ticket;
                                 p2.profit = (ReferralProfits[user.referral_level][1] / 100) * p1.profit;
                                 Logger.Imp(`Referral 2 level profit: ${p2.profit}`);

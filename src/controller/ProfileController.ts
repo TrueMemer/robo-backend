@@ -91,13 +91,13 @@ export class ProfileController {
         if (user.twofaSecret === null) {
             const secret = generateSecret({ length: 20 });
             url = otpauthURL({ secret: secret.base32,
-                label: `robofxtrading.net (${user.username})`, encoding: "base32" });
+                label: user.username, issuer: "ROBO FX TRADING", encoding: "base32" });
             user.twofaSecret = secret.base32;
 
             url = await toDataURL(encodeURIComponent(url));
         } else {
             url = otpauthURL({ secret: user.twofaSecret,
-                label: `robofxtrading.net (${user.username})`, encoding: "base32" });
+                label: user.username, issuer: "ROBO FX TRADING", encoding: "base32" });
 
             url = await toDataURL(encodeURIComponent(url));
         }
@@ -284,9 +284,9 @@ export class ProfileController {
 
                 const { secondIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
-                                    .where("profit.user_id = :id", { id: u.id })
+                                    .where("profit.user_id = :id", { id: user.id })
                                     .andWhere("profit.referral_id = :id2", { id2: u2.id })
-                                    .select("sum(profit.profit)", "income")
+                                    .select("sum(profit.profit)", "secondIncome")
                                     .getRawOne();
 
                 const workingDepo2 = await u2.getFreeDeposit();

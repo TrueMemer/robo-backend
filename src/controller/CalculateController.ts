@@ -1,4 +1,4 @@
-import { Controller, Get } from "@overnightjs/core";
+import { Controller, Get, Post } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
 
 function execShellCommand(cmd) {
@@ -16,7 +16,7 @@ function execShellCommand(cmd) {
 @Controller("api/calculator")
 export class CalculateController {
 
-    @Get("")
+    @Post("")
     private async calculate(req: Request, res: Response) {
 
         const { amount, months, reinvestInterval } = req.body;

@@ -53,12 +53,28 @@ export class ProfileController {
         const { sum } = await getRepository(Withdrawal)
                                 .createQueryBuilder("withdrawal")
                                 .where("withdrawal.user_id = :id", { id: me.id })
+                                .andWhere("withdrawal.type = '0'")
                                 .select("sum(withdrawal.amount)")
                                 .getRawOne();
+
+        const { bonusIncome } = await getRepository(Profit)
+                                    .createQueryBuilder("profit")
+                                    .where("profit.type = '2'")
+                                    .andWhere("profit.user_id = :id", { id: me.id })
+                                    .select("sum(profit.profit)", "bonusIncome")
+                                    .getRawOne();
+
+        const { bonusWithdrawed } = await getRepository(Withdrawal)
+                                        .createQueryBuilder("withdrawal")
+                                        .where("withdrawal.user_id = :id", { id: me.id })
+                                        .andWhere("withdrawal.type = '2'")
+                                        .select("sum(withdrawal.amount)", "bonusWithdrawed")
+                                        .getRawOne();
 
         me.withdrawedTotal = sum != null ? sum : 0;
         me.freeDeposit = (me.referralTotalIncome + me.profitTotal) - me.withdrawedTotal;
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
+        me.bonus = bonusIncome - bonusWithdrawed;
 
         res.send(me);
     }
@@ -78,12 +94,12 @@ export class ProfileController {
                 label: `robofxtrading.net (${user.username})`, encoding: "base32" });
             user.twofaSecret = secret.base32;
 
-            url = await toDataURL(url);
+            url = await toDataURL(encodeURIComponent(url));
         } else {
             url = otpauthURL({ secret: user.twofaSecret,
                 label: `robofxtrading.net (${user.username})`, encoding: "base32" });
 
-            url = await toDataURL(url);
+            url = await toDataURL(encodeURIComponent(url));
         }
 
         user = await getRepository(User).save(user);
@@ -307,6 +323,7 @@ export class ProfileController {
                     ref3.id = u3.id;
                     ref3.income = thirdIncome != null ? thirdIncome : 0;
                     ref3.level = 3;
+                    
     
                     resp.push(ref3);
 

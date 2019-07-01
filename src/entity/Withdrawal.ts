@@ -3,7 +3,8 @@ import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeor
 
 export enum WithdrawalType {
     WITHDRAW,
-    REINVEST
+    REINVEST,
+    BONUS
 }
 
 export enum WithdrawalStatus {

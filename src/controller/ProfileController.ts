@@ -74,7 +74,7 @@ export class ProfileController {
         me.withdrawedTotal = sum != null ? sum : 0;
         me.freeDeposit = (me.referralTotalIncome + me.profitTotal) - me.withdrawedTotal;
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
-        me.bonus = bonusIncome - bonusWithdrawed;
+        me.bonus = (bonusIncome != null ? bonusIncome : 0) - bonusWithdrawed != null ? bonusWithdrawed : 0;
 
         res.send(me);
     }

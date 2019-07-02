@@ -142,11 +142,11 @@ export default class User {
         this.referralTotalIncome = referralTotalIncome != null ? referralTotalIncome : 0;
         this.profitTotal = ordersTotalIncome != null ? ordersTotalIncome : 0;
 
-        const { sum } = await getRepository(Withdrawal)
+        const { withdrawedTotal } = await getRepository(Withdrawal)
             .createQueryBuilder("withdrawal")
             .where("withdrawal.user_id = :id", { id: this.id })
             .andWhere("withdrawal.type = '0'")
-            .select("sum(withdrawal.amount)")
+            .select("sum(withdrawal.amount)", "withdrawedTotal")
             .getRawOne();
 
         const { reinvestedTotal } = await getRepository(Withdrawal)
@@ -156,9 +156,8 @@ export default class User {
                                         .select("sum(withdrawal.amount)", "reinvestedTotal")
                                         .getRawOne();
 
-        this.withdrawedTotal = sum != null ? sum : 0;
         this.freeDeposit = (this.referralTotalIncome + this.profitTotal) -
-            (this.withdrawedTotal + reinvestedTotal != null ? reinvestedTotal : 0);
+            (withdrawedTotal + reinvestedTotal != null ? reinvestedTotal : 0);
 
         return this.freeDeposit;
     }

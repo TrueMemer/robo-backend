@@ -94,12 +94,12 @@ export class ProfileController {
                 label: user.username, issuer: "ROBO FX TRADING", encoding: "base32" });
             user.twofaSecret = secret.base32;
 
-            url = await toDataURL(encodeURIComponent(url));
+            url = await toDataURL(url);
         } else {
             url = otpauthURL({ secret: user.twofaSecret,
                 label: user.username, issuer: "ROBO FX TRADING", encoding: "base32" });
 
-            url = await toDataURL(encodeURIComponent(url));
+            url = await toDataURL(url);
         }
 
         user = await getRepository(User).save(user);

@@ -53,6 +53,7 @@ float calculate(int firstDeposit, int months, int reinvestInterval) {
     }
 
     freeDepo += workingDepo;
+    freeDepo -= firstDeposit;
 
     return freeDepo;
 }

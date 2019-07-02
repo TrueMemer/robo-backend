@@ -157,7 +157,7 @@ export default class User {
                                         .getRawOne();
 
         this.freeDeposit = (this.referralTotalIncome + this.profitTotal) -
-            (withdrawedTotal + reinvestedTotal != null ? reinvestedTotal : 0);
+            ((withdrawedTotal != null ? withdrawedTotal : 0) + (reinvestedTotal != null ? reinvestedTotal : 0));
 
         return this.freeDeposit;
     }

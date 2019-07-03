@@ -74,6 +74,15 @@ export default async () => {
 
                 Logger.Imp(`Order start [${order.id}, ${order.ticket}]`);
 
+                const tmp = await getRepository(Profit).find({
+                    where: { ticket: order.ticket, user_id: user.id }
+                });
+
+                if (tmp) {
+                    Logger.Warn(`Ignoring already calculated profit for order ${order.ticket}`);
+                    continue;
+                }
+
                 if (order.type as number === 6) {
                     Logger.Warn(`Order ${order.ticket} is type 6, ignoring...`);
                     continue;

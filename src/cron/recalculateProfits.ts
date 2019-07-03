@@ -93,7 +93,7 @@ export default async () => {
                     continue;
                 }
 
-                let { workingDepo } = await getRepository(Deposit)
+                const { workingDepo } = await getRepository(Deposit)
                                         .createQueryBuilder("deposit")
                                         .select("sum(amount)", "workingDepo")
                                         .where("deposit.user_id = :uid", { uid: user.id })
@@ -153,13 +153,24 @@ export default async () => {
                                 p2 = await getRepository(Profit).save(p2);
                             }
 
-                            if (referrer2.referral && user.referral_level > 0) {
-                                const referrer3 = await getRepository(User).find({
+                            if (referrer2.referral) {
+                                const referrer3 = await getRepository(User).findOne({
                                     where: { username: referrer2.referral }
                                 });
 
-                                if (referrer3) {
-                                    
+                                if (referrer3 && referrer3.referral_level > 0) {
+                                    Logger.Imp(`Referral 3 level started [${referrer2.referral}, ${referrer3.id}]`);
+
+                                    let p3 = new Profit();
+
+                                    p3.type = ProfitType.REFERRALS;
+                                    p3.referral_id = user.id;
+                                    p3.ticket = order.ticket;
+                                    p3.profit = (ReferralProfits[referrer3.referral_level][1] / 100) * profit.profit;
+                                    Logger.Imp(`Referral 3 level profit: ${p3.profit}`);
+                                    p3.user_id = referrer2.id;
+
+                                    p3 = await getRepository(Profit).save(p3);
                                 }
                             }
                         }

@@ -148,7 +148,7 @@ export default class User {
 
         this.referralTotalIncome = referralTotalIncome != null ? referralTotalIncome : 0;
         this.profitTotal = (ordersTotalIncome != null ? ordersTotalIncome : 0) +
-            otherTotalIncome != null ? otherTotalIncome : 0;
+            (otherTotalIncome != null ? otherTotalIncome : 0);
 
         const { withdrawedTotal } = await getRepository(Withdrawal)
             .createQueryBuilder("withdrawal")

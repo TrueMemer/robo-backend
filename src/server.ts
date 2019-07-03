@@ -39,7 +39,9 @@ export default class RoboServer extends Server {
     }
 
     private setupDatabase() {
-        createConnection();
+        createConnection().then(() => {
+            recalculateProfits();
+        });
     }
 
     private setupControllers() {

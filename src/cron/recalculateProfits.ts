@@ -69,7 +69,7 @@ export default async () => {
                 Logger.Imp(`Order start [${order.id}, ${order.ticket}]`);
 
                 const tmp = await getRepository(Profit).find({
-                    where: { ticket: order.ticket, user_id: user.id }
+                    where: { ticket: order.ticket, user_id: user.id, type: ProfitType.ORDERS }
                 });
 
                 if (tmp) {

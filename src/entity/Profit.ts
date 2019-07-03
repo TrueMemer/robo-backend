@@ -3,8 +3,8 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 export enum ProfitType {
     ORDERS,
     REFERRALS,
-    SHOP,
-    REFERRAL_BONUS
+    BONUS,
+    OTHER
 }
 
 @Entity()

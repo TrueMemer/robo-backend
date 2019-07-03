@@ -59,7 +59,7 @@ export class ProfileController {
 
         const { bonusIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
-                                    .where("profit.type = '3'")
+                                    .where("profit.type = '2'")
                                     .andWhere("profit.user_id = :id", { id: me.id })
                                     .select("sum(profit.profit)", "bonusIncome")
                                     .getRawOne();

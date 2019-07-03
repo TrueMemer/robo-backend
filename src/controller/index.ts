@@ -9,3 +9,4 @@ export * from "./StatsController";
 export * from "./ReinvestController";
 export * from "./WithdrawalController";
 export * from "./CalculateController";
+export * from "./ShopController";

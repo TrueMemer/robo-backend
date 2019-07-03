@@ -39,9 +39,7 @@ export default class RoboServer extends Server {
     }
 
     private setupDatabase() {
-        createConnection().then(() => {
-            //recalculateProfits();
-        });
+        createConnection();
     }
 
     private setupControllers() {
@@ -57,6 +55,7 @@ export default class RoboServer extends Server {
 
     private setupCron() {
         cron.schedule("*/10 * * * *", checkPendingDeposit);
+        cron.schedule("0 0/10 * 1/1 * ? *", recalculateProfits);
     }
 
 }

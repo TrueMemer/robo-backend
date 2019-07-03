@@ -132,6 +132,13 @@ export default class User {
                 .select("sum(profit.profit)", "ordersTotalIncome")
                 .getRawOne();
 
+        const { otherTotalIncome } = await getRepository(Profit)
+                .createQueryBuilder("profit")
+                .where("profit.type = '3'")
+                .andWhere("profit.user_id = :id", { id: this.id })
+                .select("sum(profit.profit)", "otherTotalIncome")
+                .getRawOne();
+
         const { referralTotalIncome } = await getRepository(Profit)
                 .createQueryBuilder("profit")
                 .where("profit.type = '1'")
@@ -140,7 +147,8 @@ export default class User {
                 .getRawOne();
 
         this.referralTotalIncome = referralTotalIncome != null ? referralTotalIncome : 0;
-        this.profitTotal = ordersTotalIncome != null ? ordersTotalIncome : 0;
+        this.profitTotal = (ordersTotalIncome != null ? ordersTotalIncome : 0) +
+            otherTotalIncome != null ? otherTotalIncome : 0;
 
         const { withdrawedTotal } = await getRepository(Withdrawal)
             .createQueryBuilder("withdrawal")

@@ -214,13 +214,13 @@ export class ProfileController {
 
         const cryptoHistory = await getRepository(CryptoTransaction).find(
             { where:
-                { user_id: id, type: TransactionType.PAYIN }, 
+                { user_id: id, type: TransactionType.PAYIN },
                 select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]
             });
 
         const history = await getRepository(Transaction).find(
             { where:
-                { user_id: id, type: TransactionType.PAYIN }, 
+                { user_id: id, type: TransactionType.PAYIN },
                 select: ["id", "status", "dateCreated", "dateDone", "currency", "amount_usd"]
             });
 
@@ -263,6 +263,15 @@ export class ProfileController {
             const { income } = await getRepository(Profit)
                                 .createQueryBuilder("profit")
                                 .where("profit.user_id = :id", { id: user.id })
+                                .andWhere("profit.type = '1'")
+                                .andWhere("profit.referral_id = :id2", { id2: u.id })
+                                .select("sum(profit.profit)", "income")
+                                .getRawOne();
+
+            const { bonusIncome } = await getRepository(Profit)
+                                .createQueryBuilder("profit")
+                                .where("profit.user_id = :id", { id: user.id })
+                                .andWhere("profit.type = '2'")
                                 .andWhere("profit.referral_id = :id2", { id2: u.id })
                                 .select("sum(profit.profit)", "income")
                                 .getRawOne();
@@ -273,6 +282,7 @@ export class ProfileController {
             ref1.id = u.id;
             ref1.income = income != null ? income : 0;
             ref1.level = 1;
+            ref1.bonus = bonusIncome != null ? bonusIncome : 0;
 
             const second = await getRepository(Referral).find({ where: { referrer: u.id } });
 
@@ -285,11 +295,18 @@ export class ProfileController {
                 const { secondIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
                                     .where("profit.user_id = :id", { id: user.id })
+                                    .andWhere("profit.type = '1'")
                                     .andWhere("profit.referral_id = :id2", { id2: u2.id })
                                     .select("sum(profit.profit)", "secondIncome")
                                     .getRawOne();
 
-                const workingDepo2 = await u2.getFreeDeposit();
+                const { secondBonusIncome } = await getRepository(Profit)
+                                    .createQueryBuilder("profit")
+                                    .where("profit.user_id = :id", { id: user.id })
+                                    .andWhere("profit.type = '2'")
+                                    .andWhere("profit.referral_id = :id2", { id2: u2.id })
+                                    .select("sum(profit.profit)", "income")
+                                    .getRawOne();
 
                 ref2.workingDepo = u2.workingDeposit;
                 ref2.username = u2.username;
@@ -297,6 +314,7 @@ export class ProfileController {
                 ref2.id = u2.id;
                 ref2.income = secondIncome != null ? secondIncome : 0;
                 ref2.level = 2;
+                ref2.bonus = secondBonusIncome != null ? secondBonusIncome : 0;
 
                 resp.push(ref2);
 
@@ -310,21 +328,28 @@ export class ProfileController {
 
                     const { thirdIncome } = await getRepository(Profit)
                                         .createQueryBuilder("profit")
-                                        .where("profit.user_id = :id", { id: u2.id })
+                                        .where("profit.user_id = :id", { id: user.id })
+                                        .andWhere("profit.type = '1'")
                                         .andWhere("profit.referral_id = :id2", { id2: u3.id })
                                         .select("sum(profit.profit)", "income")
                                         .getRawOne();
-    
-                    const workingDepo3 = await u3.getFreeDeposit();
-    
+
+                    const { thirdBonusIncome } = await getRepository(Profit)
+                                        .createQueryBuilder("profit")
+                                        .where("profit.user_id = :id", { id: user.id })
+                                        .andWhere("profit.type = '2'")
+                                        .andWhere("profit.referral_id = :id2", { id2: u3.id })
+                                        .select("sum(profit.profit)", "income")
+                                        .getRawOne();
+
                     ref3.workingDepo = u3.workingDeposit;
                     ref3.username = u3.username;
                     ref3.referrer = u3.referral;
                     ref3.id = u3.id;
                     ref3.income = thirdIncome != null ? thirdIncome : 0;
                     ref3.level = 3;
-                    
-    
+                    ref3.bonus = thirdBonusIncome != null ? thirdBonusIncome : 0;
+
                     resp.push(ref3);
 
                 }

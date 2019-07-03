@@ -19,12 +19,6 @@ export default async () => {
 
     const users: User[] = await getRepository(User).find();
 
-    await getConnection()
-        .createQueryBuilder()
-        .delete()
-        .from(Profit)
-        .execute();
-
     for (const user of users) {
 
         Logger.Imp(`User start [${user.id}] ${user.username}:`);

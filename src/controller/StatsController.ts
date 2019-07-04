@@ -22,7 +22,7 @@ export class StatsController {
 
         const { ordersTotal } = await getRepository(Order)
                                     .createQueryBuilder("order")
-                                    .select("sum(order.profit)", "ordersTotal")
+                                    .select("sum(order.profit + order.swap)", "ordersTotal")
                                     .where("order.type != '6'")
                                     .getRawOne();
 

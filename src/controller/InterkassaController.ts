@@ -8,8 +8,6 @@ export class InterkassaController {
     @Post("interaction")
     private async interaction(req: Request, res: Response) {
 
-        const id = res.locals.jwtPayload.userId;
-
         console.log(req.body);
 
     }

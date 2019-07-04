@@ -273,7 +273,7 @@ export class ProfileController {
                                 .where("profit.user_id = :id", { id: user.id })
                                 .andWhere("profit.type = '2'")
                                 .andWhere("profit.referral_id = :id2", { id2: u.id })
-                                .select("sum(profit.profit)", "income")
+                                .select("sum(profit.profit)", "bonusIncome")
                                 .getRawOne();
 
             ref1.workingDepo = u.workingDeposit;
@@ -305,7 +305,7 @@ export class ProfileController {
                                     .where("profit.user_id = :id", { id: user.id })
                                     .andWhere("profit.type = '2'")
                                     .andWhere("profit.referral_id = :id2", { id2: u2.id })
-                                    .select("sum(profit.profit)", "income")
+                                    .select("sum(profit.profit)", "secondBonusIncome")
                                     .getRawOne();
 
                 ref2.workingDepo = u2.workingDeposit;
@@ -339,7 +339,7 @@ export class ProfileController {
                                         .where("profit.user_id = :id", { id: user.id })
                                         .andWhere("profit.type = '2'")
                                         .andWhere("profit.referral_id = :id2", { id2: u3.id })
-                                        .select("sum(profit.profit)", "income")
+                                        .select("sum(profit.profit)", "thirdBonusIncome")
                                         .getRawOne();
 
                     ref3.workingDepo = u3.workingDeposit;

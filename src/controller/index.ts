@@ -10,3 +10,5 @@ export * from "./ReinvestController";
 export * from "./WithdrawalController";
 export * from "./CalculateController";
 export * from "./ShopController";
+export * from "./PIPOController";
+export * from "./InterkassaController";

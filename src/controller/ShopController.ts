@@ -13,7 +13,72 @@ export class ShopController {
 
     private chance = 10;
     private bet = 200;
-    private bank = this.bet / this.chance;
+    private bank = ((this.bet * this.chance) / 100) + 1;
+
+    @Get("feedRobo")
+    private async feed(req: Request, res: Response) {
+
+        const id = res.locals.jwtPayload.userId;
+
+        const user = await getRepository(User).findOne(id);
+
+        if (await user.getFreeDeposit() < 1) {
+            return res.status(400).send({
+                msg: "Insufficient balance",
+                code: 400
+            });
+        }
+
+        const random = new twister();
+        const number = random.random_int();
+        let zerochance = random.random_int();
+        zerochance = zerochance % 2;
+        console.log(number);
+
+        let award = 0;
+        if (zerochance === 0) {
+            award = number % Math.round((this.bank - 1) / 2);
+        } else {
+            award = number % Math.round(((this.bet * this.chance) / 100 - this.bank) / 2);
+        }
+
+        if ((award !== 1) && (award !== 2)) {
+            award = 0;
+        }
+
+        if ((this.bank - award) <= 0) {
+            award = 0;
+        }
+
+        this.bank -= award;
+
+        let fee = new Profit();
+
+        fee.user_id = id;
+        fee.profit = -1;
+        fee.type = ProfitType.OTHER;
+
+        fee = await getRepository(Profit).save(fee);
+
+        if (award > 0) {
+            let a = new Profit();
+            a.profit = award;
+            a.type = ProfitType.BONUS;
+            a.user_id = user.id;
+
+            a = await getRepository(Profit).save(a);
+        }
+
+        return res.status(200).send({
+            result: award
+        });
+
+    }
+
+    @Get("")
+    private async getEntries() {
+        return await getRepository(ShopEntry).find();
+    }
 
     @Post("")
     private async buy(req: Request, res: Response) {
@@ -97,57 +162,5 @@ export class ShopController {
 
     }
 
-    @Get("feedRobo")
-    private async feed(req: Request, res: Response) {
-
-        const id = res.locals.jwtPayload.userId;
-
-        const user = await getRepository(User).findOne(id);
-
-        if (await user.getFreeDeposit() < 1) {
-            return res.status(400).send({
-                msg: "Insufficient balance",
-                code: 400
-            });
-        }
-
-        const random = new twister();
-        const number = random.random_int();
-
-        console.log(number);
-
-        const award = number % 3;
-
-        if ((this.bank - award) <= 0) {
-            return res.status(400).send({
-                msg: "Robo is fed up",
-                code: 400
-            });
-        }
-
-        this.bank -= award;
-
-        let fee = new Profit();
-
-        fee.user_id = id;
-        fee.profit = -1;
-        fee.type = ProfitType.OTHER;
-
-        fee = await getRepository(Profit).save(fee);
-
-        if (award > 0) {
-            let a = new Profit();
-            a.profit = award;
-            a.type = ProfitType.BONUS;
-            a.user_id = user.id;
-
-            a = await getRepository(Profit).save(a);
-        }
-
-        return res.status(200).send({
-            result: award
-        });
-
-    }
 
 }

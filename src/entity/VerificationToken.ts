@@ -3,13 +3,14 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 export enum VerificationTokenType {
     EMAIL,
     WITHDRAW,
-    REINVEST
+    REINVEST,
+    PASSRESET
 }
 
 @Entity()
 export class VerificationToken {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn("uuid")
     public id: number;
 
     @Column()

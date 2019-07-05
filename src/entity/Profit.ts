@@ -37,4 +37,7 @@ export default class Profit {
 
     @Column({ nullable: true })
     public referral_id: number;
+
+    @Column({ nullable: true })
+    public referral_level: number;
 }

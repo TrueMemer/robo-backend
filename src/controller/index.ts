@@ -12,3 +12,4 @@ export * from "./CalculateController";
 export * from "./ShopController";
 export * from "./PIPOController";
 export * from "./InterkassaController";
+export * from "./CoinbaseController";

@@ -9,7 +9,8 @@ export enum WithdrawalType {
 
 export enum WithdrawalStatus {
     PENDING,
-    DONE
+    DONE,
+    EXPIRING
 }
 
 @Entity()

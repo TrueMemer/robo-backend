@@ -14,6 +14,7 @@ import Withdrawal, { WithdrawalStatus, WithdrawalType } from "../entity/Withdraw
 import CryptoNames from "../helpers/CryptoNames";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import * as blockio from "block_io";
+import * as qs from "qs";
 
 @Controller("api/withdraw")
 @ClassMiddleware([JWTChecker])
@@ -40,12 +41,13 @@ export class WithdrawalController {
                 msg: "Insufficient balance",
                 code: 400
             });
-        } else if (amount < 50) {
-            return res.status(400).send({
-                msg: "Minimal withdraw amount is 50$",
-                code: 400
-            });
         }
+        // } else if (amount < 50) {
+        //     return res.status(400).send({
+        //         msg: "Minimal withdraw amount is 50$",
+        //         code: 400
+        //     });
+        // }
 
         let w_amount = 0;
         let transaction;
@@ -94,6 +96,57 @@ export class WithdrawalController {
             transaction.user_id = id;
 
             transaction = await getRepository(CryptoTransaction).save(transaction);
+
+            let withdrawal = new Withdrawal();
+            withdrawal.amount = transaction.amount_usd;
+            withdrawal.status = WithdrawalStatus.PENDING;
+            withdrawal.transactionId = transaction.id;
+            withdrawal.type = WithdrawalType.WITHDRAW;
+            withdrawal.user_id = id;
+
+            withdrawal = await getRepository(Withdrawal).save(withdrawal);
+        } else if (currency === "payeer") {
+
+            if (!user.payeerWallet || user.payeerWallet === "") {
+                return res.status(400).send({
+                    msg: "No payeer wallet",
+                    code: 400
+                });
+            }
+
+            const initParams = {
+                ps: 1136053,
+                sumIn: amount,
+                curIn: "USD",
+                curOut: "USD",
+                param_ACCOUNT_NUMBER: user.payeerWallet,
+                account: config.payeer.account_id,
+                apiId: config.payeer.api_id,
+                apiPass: config.payeer.secret_key,
+            };
+
+            console.log(initParams);
+
+            const r = await axios.post("https://payeer.com/ajax/api/api.php?initOutput", qs.stringify(initParams));
+
+            const resp = await r.data;
+
+            if (resp.errors.length !== 0) {
+                return res.status(400).send({
+                    msg: "Payout is not possible",
+                    code: 400
+                });
+            }
+
+            transaction = new Transaction();
+            transaction.amount_usd = amount;
+            transaction.currency = currency;
+            transaction.dateCreated = new Date(Date.now());
+            transaction.status = TransactionStatus.PENDING;
+            transaction.type = TransactionType.WITHDRAWAL;
+            transaction.user_id = id;
+
+            transaction = await getRepository(Transaction).save(transaction);
 
             let withdrawal = new Withdrawal();
             withdrawal.amount = transaction.amount_usd;
@@ -160,9 +213,9 @@ export class WithdrawalController {
         console.log(transaction_id);
         console.log(code);
 
-        if (!user.twofa) {
-            let token;
+        let token;
 
+        if (!user.twofa) {
             try {
                 token = await getRepository(VerificationToken).findOneOrFail(
                     { token: code, transaction_id,
@@ -174,7 +227,6 @@ export class WithdrawalController {
                 });
             }
 
-            await getRepository(VerificationToken).remove(token);
         } else {
             if (!totp.verify({ secret: user.twofaSecret, token: code, encoding: "base32", window: 0 })) {
                 return res.status(401).send({
@@ -228,6 +280,54 @@ export class WithdrawalController {
                     withdrawal = await getRepository(Withdrawal).save(withdrawal);
                 }
             });
+        } else if (transaction.currency === "payeer") {
+
+            if (!user.payeerWallet || user.payeerWallet === "") {
+                return res.status(400).send({
+                    msg: "No payeer wallet",
+                    code: 400
+                });
+            }
+
+            const initParams = {
+                ps: 1136053,
+                sumIn: transaction.amount_usd,
+                curIn: "USD",
+                curOut: "USD",
+                param_ACCOUNT_NUMBER: user.payeerWallet,
+                account: config.payeer.account_id,
+                apiId: config.payeer.api_id,
+                apiPass: config.payeer.secret_key,
+                action: "output"
+            };
+
+            const r = await axios.post("https://payeer.com/ajax/api/api.php?output", qs.stringify(initParams));
+
+            const resp = await r.data;
+
+            console.log(resp);
+
+            if (resp.errors === true) {
+                return res.status(400).send({
+                    msg: "Payment is not possible (wait)",
+                    code: 400
+                });
+            }
+
+            transaction.dateDone = new Date(Date.now());
+            transaction.status = TransactionStatus.DONE;
+
+            transaction = await getRepository(Transaction).save(transaction);
+
+            let withdrawal = await getRepository(Withdrawal).findOne(
+                { where: { transactionId: transaction.id } });
+            withdrawal.amount = transaction.amount_usd;
+            withdrawal.status = WithdrawalStatus.DONE;
+            withdrawal.transactionId = transaction.id;
+            withdrawal.type = WithdrawalType.WITHDRAW;
+            withdrawal.user_id = id;
+
+            withdrawal = await getRepository(Withdrawal).save(withdrawal);
 
         } else {
             res.status(400).send({
@@ -235,6 +335,8 @@ export class WithdrawalController {
                 code: 400
             });
         }
+
+        await getRepository(VerificationToken).remove(token);
 
         return res.status(200).send();
     }

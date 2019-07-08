@@ -20,7 +20,8 @@ export default {
     payeer: {
        secret_key: "CZagstja",
        additional_key: "f>V]&xR:k8>2",
-       account_id: "809708939"
+       account_id: "P1013992279",
+       api_id: "814919922"
     },
     latypay: {
         secret_key: "7aQ]<\"Yck\"6a",
@@ -28,5 +29,9 @@ export default {
     },
     perfect_money: {
         passphrase: "T8xc1Q4L9c4gQTFoowFHbmoHZ"
+    },
+    coinbase: {
+        api_key: "077110b7-7580-4d14-afd7-de2dc015acb7",
+        api_version: "2018-03-22"
     }
 };

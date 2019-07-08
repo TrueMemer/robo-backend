@@ -52,6 +52,7 @@ export class CoinbaseController {
         t.status = TransactionStatus.PENDING;
         t.type = TransactionType.PAYIN;
         t.user_id = user.id;
+        t.currency = "ethereum";
 
         t = await getRepository(CryptoTransaction).save(t);
 

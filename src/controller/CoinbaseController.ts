@@ -100,7 +100,7 @@ export class CoinbaseController {
             } break;
             case "charge:confirmed": {
 
-                const t = await getRepository(CryptoTransaction).findOne(event.metadata.transaction_id);
+                const t = await getRepository(CryptoTransaction).findOne(event.data.metadata.transaction_id);
 
                 t.dateDone = new Date(Date.now());
                 t.status = TransactionStatus.DONE;
@@ -121,7 +121,7 @@ export class CoinbaseController {
             } break;
             case "charge:failed": {
 
-                const t = await getRepository(CryptoTransaction).findOne(event.metadata.transaction_id);
+                const t = await getRepository(CryptoTransaction).findOne(event.data.metadata.transaction_id);
 
                 t.dateDone = new Date(Date.now());
                 t.status = TransactionStatus.FAILED;

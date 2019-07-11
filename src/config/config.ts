@@ -33,5 +33,8 @@ export default {
     coinbase: {
         api_key: "077110b7-7580-4d14-afd7-de2dc015acb7",
         api_version: "2018-03-22"
+    },
+    payin_payout: {
+        agentId: 4283
     }
 };

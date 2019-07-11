@@ -137,6 +137,8 @@ export class CoinbaseController {
             } break;
         }
 
+        res.status(200).send();
+
     }
 
 }

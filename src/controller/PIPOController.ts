@@ -1,4 +1,4 @@
-import { Controller, ClassMiddleware, Post } from "@overnightjs/core";
+import { Controller, ClassMiddleware, Post, Middleware } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import * as uuid from "uuid/v4";
@@ -6,12 +6,13 @@ import { getRepository } from "typeorm";
 import User from "../entity/User";
 import moment = require("moment");
 import md5 = require("md5");
+import axios from "axios";
 
 @Controller("api/payment/pipo")
-@ClassMiddleware([JWTChecker])
 export class PayinPayout {
 
     @Post("create")
+    @Middleware([JWTChecker])
     private async create(req: Request, res: Response) {
 
         const { amount } = req.body;
@@ -22,7 +23,19 @@ export class PayinPayout {
 
         const uid = uuid();
         const agentTime = moment().utc().format("HH:mm:SS DD.MM.YYYY");
-        const formAmount = parseFloat(amount).toFixed(2);
+
+        let r;
+        try {
+            r = await axios.get(`https://api.cryptonator.com/api/ticker/usd-rur`);
+        } catch (error) {
+            return res.status(400).send({
+                msg: "Can't convert currency (cryptonator is down?)",
+                code: 400,
+            });
+        }
+
+        const formAmount = ((amount * await r.data.ticker.price) + (amount * await r.data.ticker.price) * 0.055).toFixed(2);
+        console.log(formAmount);
 
         let sign_raw = `4283#${uid}#${agentTime}#${formAmount}#79090000001#${md5("W53prbl4uC")}`;
 
@@ -48,5 +61,14 @@ export class PayinPayout {
         });
 
     }
+
+    @Post("status")
+    private async status(req: Request, res: Response) {
+
+        console.log(req.body);
+
+    }
+
+
 
 }

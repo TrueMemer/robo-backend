@@ -5,13 +5,14 @@ import { generateSecret, otpauthURL, totp } from "speakeasy";
 import { getRepository } from "typeorm";
 import AuthorizationEntry from "../entity/AuthorizationEntry";
 import CryptoTransaction from "../entity/CryptoTransaction";
-import Deposit from "../entity/Deposit";
-import Profit from "../entity/Profit";
+import Deposit, { DepositStatus } from "../entity/Deposit";
+import Profit, { ProfitType } from "../entity/Profit";
 import { Referral } from "../entity/Referral";
 import Transaction, { TransactionType } from "../entity/Transaction";
 import User from "../entity/User";
 import Withdrawal, { WithdrawalType } from "../entity/Withdrawal";
 import { JWTChecker } from "../middlewares/JWTChecker";
+import UserView from "../entity/UserView";
 
 @Controller("api/profile")
 @ClassMiddleware([JWTChecker])
@@ -32,6 +33,9 @@ export class ProfileController {
                 code: 401
             });
         }
+
+        const view = await getRepository(UserView).findOne({ where: { id } });
+        console.log(view);
 
         const { ordersTotalIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
@@ -75,6 +79,7 @@ export class ProfileController {
         me.freeDeposit = await me.getFreeDeposit();
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
         me.bonus = (bonusIncome != null ? bonusIncome : 0) - (bonusWithdrawed != null ? bonusWithdrawed : 0);
+        me.workingDeposit = await me.getWorkingDepo();
 
         res.send(me);
     }
@@ -392,6 +397,42 @@ export class ProfileController {
         });
 
         return res.status(200).send(auth);
+    }
+
+    @Get("returnDeposits")
+    private async return(req: Request, res: Response) {
+
+        const id = res.locals.jwtPayload.userId;
+
+        const { workingDepo } = await getRepository(Deposit)
+                                    .createQueryBuilder("deposit")
+                                    .select("sum(amount)", "workingDepo")
+                                    .where("user_id = :id", { id })
+                                    .andWhere("status = :status", { status: DepositStatus.WORKING })
+                                    .getRawOne();
+
+        let p = new Profit();
+        p.type = ProfitType.DEPOSIT_RETURN;
+        p.user_id = id;
+        p.profit = workingDepo - (workingDepo * 0.3);
+
+        p = await getRepository(Profit).save(p);
+
+        const r = await getRepository(Deposit)
+                            .createQueryBuilder("deposit")
+                            .update(Deposit)
+                            .set({ status: DepositStatus.EXPIRED })
+                            .where("user_id = :id", { id })
+                            .execute();
+
+        const user = await getRepository(User).findOne(id);
+        user.updateDeposits();
+        await getRepository(User).save(user);
+
+        console.log(r);
+
+        res.status(200).send();
+
     }
 
 }

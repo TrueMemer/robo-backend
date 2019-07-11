@@ -4,6 +4,8 @@ import { getRepository, LessThan } from "typeorm";
 import Deposit from "../entity/Deposit";
 import Order from "../entity/Order";
 import User from "../entity/User";
+import * as bestchange from "node-bestchange";
+import { BestchangeIds } from "../helpers/BestchangeIds";
 
 @Controller("api/stats")
 export class StatsController {
@@ -36,6 +38,24 @@ export class StatsController {
             deposited,
             safetyDepo,
             withdrawed
+        });
+
+    }
+
+    @Get("exchanges")
+    private async exchanges(req: Request, res: Response) {
+
+        const api = await (new bestchange("./cache")).load();
+        let rates = api.getRates();
+
+        rates.data = rates.data.sort((a, b) => a.rateRecieve - b.rateRecieve);
+
+        return res.status(200).send({
+            bitcoin: rates.filter(BestchangeIds.bitcoin, BestchangeIds.visa_usd)[0].rateReceive,
+            ethereum: rates.filter(BestchangeIds.ethereum, BestchangeIds.visa_usd)[0].rateReceive,
+            litecoin: rates.filter(BestchangeIds.litecoin, BestchangeIds.visa_usd)[0].rateReceive,
+            dash: rates.filter(BestchangeIds.dash, BestchangeIds.visa_usd)[0].rateReceive,
+            dogecoin: rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd)[0].rateGive
         });
 
     }

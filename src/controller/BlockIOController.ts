@@ -11,6 +11,8 @@ import { TransactionStatus, TransactionType } from "../entity/Transaction";
 import User from "../entity/User";
 import CryptoNames from "../helpers/CryptoNames";
 import { JWTChecker } from "../middlewares/JWTChecker";
+import { BestchangeIds } from "../helpers/BestchangeIds";
+const bestchange = require("node-bestchange");
 
 @Controller("api/payment/crypto")
 @ClassMiddleware([JWTChecker])
@@ -38,27 +40,36 @@ export class BlockIOController {
             });
         }
 
-        let r;
+        const api = await (new bestchange("./cache")).load();
+        let rates;
 
         try {
-            r = await axios.get(`https://api.cryptonator.com/api/ticker/usd-${CryptoNames[p.currency]}`);
-        } catch (error) {
+            rates = await api.getRates().filter(BestchangeIds[currency], BestchangeIds.visa_usd);
+        } catch (e) {
+            console.log(e);
             return res.status(400).send({
-                msg: "No currency with that name was found",
+                msg: "Currency is not supported",
                 code: 400,
-                currency: p.currency
+                currency
             });
         }
 
-        p.amount_currency = (await r.data.ticker.price * p.amount_usd);
+        rates = rates.sort((a, b) => a.rateRecieve - b.rateRecieve);
+
+        console.log(rates);
+
+        p.amount_currency = (1 / rates[0].rateReceive * p.amount_usd);
 
         p.dateCreated = new Date(Date.now());
+
+        let r;
 
         try {
             /* tslint:disable max-line-length */
             r = await axios.get(`https://block.io/api/v2/get_new_address/?api_key=${config.blockio.api_keys[p.currency]}`);
             /* tslint:enable max-line-length */
         } catch (error) {
+            console.log(error);
             return res.status(400).send({
                 msg: "This currency is not supported",
                 code: 400,
@@ -68,6 +79,7 @@ export class BlockIOController {
 
         const { status, data } = await r.data;
         if (status !== "success") {
+            console.log(data);
             return res.status(400).send({
                 msg: "This currency is not supported",
                 code: 400,

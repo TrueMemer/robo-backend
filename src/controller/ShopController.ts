@@ -76,8 +76,8 @@ export class ShopController {
     }
 
     @Get("")
-    private async getEntries() {
-        return await getRepository(ShopEntry).find();
+    private async getEntries(req: Request, res: Response) {
+        return res.status(200).send(await getRepository(ShopEntry).find());
     }
 
     @Post("")

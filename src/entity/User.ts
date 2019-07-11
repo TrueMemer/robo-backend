@@ -1,5 +1,5 @@
 import * as bcrypt from "bcryptjs";
-import { IsEmail, IsNotEmpty, Length } from "class-validator";
+import { IsEmail, IsNotEmpty, Length, IsNumber, IsBoolean } from "class-validator";
 import * as typeorm from "typeorm";
 import { Column, CreateDateColumn, Entity,
     getRepository, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
@@ -18,13 +18,17 @@ export enum UserRole {
 export default class User {
 
     @PrimaryGeneratedColumn()
+    @IsNotEmpty()
+    @IsNumber()
     public id: number;
 
     @Column()
+    @IsNotEmpty()
     @Length(4, 20)
     public username: string;
 
     @Column({ select: false })
+    @IsNotEmpty()
     @Length(4, 128)
     public password: string;
 
@@ -33,6 +37,7 @@ export default class User {
     public email: string;
 
     @Column({ default: false })
+    @IsBoolean()
     public isVerified: boolean;
 
     @Column({
@@ -132,6 +137,13 @@ export default class User {
                 .select("sum(profit.profit)", "ordersTotalIncome")
                 .getRawOne();
 
+        const { returnTotalIncome } = await getRepository(Profit)
+                .createQueryBuilder("profit")
+                .where("profit.type = '4'")
+                .andWhere("profit.user_id = :id", { id: this.id })
+                .select("sum(profit.profit)", "returnTotalIncome")
+                .getRawOne();
+
         const { otherTotalIncome } = await getRepository(Profit)
                 .createQueryBuilder("profit")
                 .where("profit.type = '3'")
@@ -165,13 +177,27 @@ export default class User {
                                         .getRawOne();
 
         this.freeDeposit = (this.referralTotalIncome + this.profitTotal) -
-            ((withdrawedTotal != null ? withdrawedTotal : 0) + (reinvestedTotal != null ? reinvestedTotal : 0));
+            ((withdrawedTotal != null ? withdrawedTotal : 0) + (reinvestedTotal != null ? reinvestedTotal : 0))
+            + (returnTotalIncome != null ? returnTotalIncome : 0);
 
         return this.freeDeposit;
     }
 
     public updateBalance() {
         this.balance = this.freeDeposit + this.workingDeposit + this.pendingDeposit;
+    }
+
+    public async getWorkingDepo() {
+
+        const { depo } = await getRepository(Deposit)
+                                .createQueryBuilder("deposit")
+                                .select("sum(amount)", "depo")
+                                .where("user_id = :id", { id: this.id })
+                                .andWhere("status = :status", { status: DepositStatus.WORKING })
+                                .getRawOne();
+
+        return depo != null ? depo : 0;
+
     }
 
     public async updateDeposits() {

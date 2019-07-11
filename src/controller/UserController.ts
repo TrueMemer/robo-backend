@@ -18,9 +18,7 @@ export default class UserController {
     @Middleware([JWTChecker, RoleChecker(["ADMIN"])])
     private async listAll(req: Request, res: Response) {
         const userRepository = getRepository(User);
-        const users = await userRepository.find({
-            select: ["id", "username", "role", "email"]
-        });
+        const users = await userRepository.find();
 
         res.send(users);
     }
@@ -182,8 +180,6 @@ export default class UserController {
     private async editUser(req: Request, res: Response) {
         const id = req.params.id;
 
-        const { username, role, email } = req.body;
-
         const userRepository = getRepository(User);
         let user;
         try {
@@ -193,10 +189,13 @@ export default class UserController {
             return;
         }
 
-        user.username = username;
-        user.role = role;
-        user.email = email;
-        const errors = await validate(user);
+        for (const key in req.body) {
+            if (user.hasOwnProperty(key)) {
+                user[key] = req.body[key];
+            }
+        }
+
+        const errors = await validate(user, { skipMissingProperties: true });
         if (errors.length > 0) {
             res.status(400).send(errors);
             return;

@@ -10,6 +10,8 @@ import CryptoTransaction from "../entity/CryptoTransaction";
 import { TransactionStatus, TransactionType } from "../entity/Transaction";
 import Deposit, { DepositStatus, DepositType } from "../entity/Deposit";
 import moment = require("moment");
+import { BestchangeIds } from "../helpers/BestchangeIds";
+import * as bestchange from "node-bestchange";
 
 @Controller("api/payment/coinbase")
 export class CoinbaseController {
@@ -31,18 +33,22 @@ export class CoinbaseController {
             });
         }
 
-        let r;
+        const api = await (new bestchange("./cache")).load();
+        let rates;
 
         try {
-            r = await axios.get(`https://api.cryptonator.com/api/ticker/usd-eth`);
-        } catch (error) {
+            rates = await api.getRates().filter(BestchangeIds.ethereum, BestchangeIds.visa_usd);
+        } catch (e) {
+            console.log(e);
             return res.status(400).send({
-                msg: "No currency with that name was found",
-                code: 400,
+                msg: "Currency is not supported",
+                code: 400
             });
         }
 
-        const eth_amount = (await r.data.ticker.price * amount);
+        rates = rates.sort((a, b) => a.rateRecieve - b.rateRecieve);
+
+        const eth_amount = (1 / rates[0].rateReceive * amount);
 
         let t = new CryptoTransaction();
         t.amount_usd = amount;

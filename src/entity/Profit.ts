@@ -4,7 +4,8 @@ export enum ProfitType {
     ORDERS,
     REFERRALS,
     BONUS,
-    OTHER
+    OTHER,
+    DEPOSIT_RETURN
 }
 
 @Entity()

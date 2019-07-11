@@ -13,6 +13,9 @@ export class ShopEntry {
     public id: string;
 
     @Column()
+    public name: string;
+
+    @Column()
     public type: ShopEntryType;
 
     @Column()

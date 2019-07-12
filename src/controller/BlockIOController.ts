@@ -58,7 +58,11 @@ export class BlockIOController {
 
         console.log(rates);
 
-        p.amount_currency = (1 / rates[0].rateReceive * p.amount_usd);
+        if (rates[0].rateReceive === 1) {
+            p.amount_currency = rates[0].rateGive * p.amount_usd;
+        } else {
+            p.amount_currency = (1 / rates[0].rateReceive * p.amount_usd);
+        }
 
         p.dateCreated = new Date(Date.now());
 

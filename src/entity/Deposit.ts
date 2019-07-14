@@ -62,7 +62,7 @@ export default class Deposit {
             const profit = new Profit();
 
             profit.user_id = this.user_id;
-            profit.type = ProfitType.REFERRAL_BONUS;
+            // profit.type = ProfitType.REFERRAL_BONUS;
             profit.profit = 1;
 
             await getRepository(Profit).save(profit);
@@ -78,7 +78,7 @@ export default class Deposit {
 
                 p.profit = 1;
                 p.user_id = referral.id;
-                p.type = ProfitType.REFERRAL_BONUS;
+                // p.type = ProfitType.REFERRAL_BONUS;
                 p.referral_id = user.id;
 
                 await getRepository(Profit).save(p);

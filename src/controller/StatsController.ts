@@ -48,40 +48,42 @@ export class StatsController {
         const api = await (new bestchange("./cache")).load();
         const rates = api.getRates();
 
-        rates.data = rates.data.sort((a, b) => a.rateRecieve - b.rateRecieve);
+        const sortRecieve = (a, b) => b.rateReceive - a.rateReceive;
+        const sortGive = (a, b) => a.rateGive - b.rateGive;
 
-        console.log(rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd)[0])
-        console.log(rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin)[0])
-
-        return res.status(200).send({
+        let result = {
             bitcoin: {
                 name: "BTC",
-                buy: rates.filter(BestchangeIds.bitcoin, BestchangeIds.visa_usd)[0].rateReceive,
-                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.bitcoin)[0].rateGive,
+                buy: rates.filter(BestchangeIds.bitcoin, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateReceive,
+                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.bitcoin).sort(sortGive)[0].rateGive,
             },
             ethereum: {
                 name: "ETH",
-                buy: rates.filter(BestchangeIds.ethereum, BestchangeIds.visa_usd)[0].rateReceive,
-                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.ethereum)[0].rateGive,
+                buy: rates.filter(BestchangeIds.ethereum, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateReceive,
+                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.ethereum).sort(sortGive)[0].rateGive,
             },
             litecoin: {
                 name: "LTC",
-                buy: rates.filter(BestchangeIds.litecoin, BestchangeIds.visa_usd)[0].rateReceive,
-                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.litecoin)[0].rateGive,
+                buy: rates.filter(BestchangeIds.litecoin, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateReceive,
+                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.litecoin).sort(sortGive)[0].rateGive,
             },
             dash: {
                 name: "DASH",
-                buy: rates.filter(BestchangeIds.dash, BestchangeIds.visa_usd)[0].rateReceive,
-                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.dash)[0].rateGive,
+                buy: rates.filter(BestchangeIds.dash, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateReceive,
+                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.dash).sort(sortGive)[0].rateGive,
             },
             dogecoin: {
                 name: "DOGE",
-                buy: rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd)[0].rateReceive
-                    / rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd)[0].rateGive,
-                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin)[0].rateGive 
-                    / rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin)[0].rateReceive
+                buy: rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateReceive
+                    / rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateGive,
+                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin).sort(sortGive)[0].rateGive 
+                    / rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin).sort(sortGive)[0].rateReceive
             }
-        });
+        };
+
+        console.log(result.bitcoin)
+
+        return res.status(200).send(result);
 
     }
 

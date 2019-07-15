@@ -209,14 +209,15 @@ export class AuthController {
         t = await getRepository(VerificationToken).save(t);
 
         const transporter = nodemailer.createTransport({
-            service: config.mail.service,
+            host: "smtp.yandex.ru",
+            port: 465,
             auth: {
                 user: config.mail.username,
                 pass: config.mail.password
             }
         });
         const mailOptions = {
-            from: "robofxtrading19@gmail.com",
+            from: config.mail.username,
             to: user.email,
             subject: "Восстановление пароля",
             text: "Здравствуйте,\n\n" +

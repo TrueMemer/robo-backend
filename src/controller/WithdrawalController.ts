@@ -168,14 +168,15 @@ export class WithdrawalController {
             token = await getRepository(VerificationToken).save(token);
 
             const transporter = nodemailer.createTransport({
-                service: config.mail.service,
+                host: "smtp.yandex.ru",
+                port: 465,
                 auth: {
                     user: config.mail.username,
                     pass: config.mail.password
                 }
             });
             const mailOptions = {
-                from: "robofxtrading19@gmail.com",
+                from: config.mail.username,
                 to: user.email,
                 subject: `Подтверждение выплаты ${transaction.id}`,
                 text: "Здравствуйте,\n\n" +
@@ -258,28 +259,40 @@ export class WithdrawalController {
 
             const block = new blockio(config.blockio.api_keys[transaction.currency], config.blockio.pin);
 
-            block.withdraw({ amounts: transaction.amount_currency, 
-                to_addresses: transaction.receive_address }, async (e, data) => {
-                if (e) {
-                    console.log(e);
-                    status = false;
-                } else {
-                    transaction.dateDone = new Date(Date.now());
-                    transaction.status = TransactionStatus.DONE;
+            try {
+                await new Promise((resolve, reject) => {
+                  block.withdraw({ amounts: transaction.amount_currency, 
+                        to_addresses: transaction.receive_address }, async (e, data) => {
+                        if (e) {
+                            reject(e);
+                        } else {
+                            transaction.dateDone = new Date(Date.now());
+                            transaction.status = TransactionStatus.DONE;
 
-                    transaction = await getRepository(CryptoTransaction).save(transaction);
+                            transaction = await getRepository(CryptoTransaction).save(transaction);
 
-                    let withdrawal = await getRepository(Withdrawal).findOne(
-                        { where: { transactionId: transaction.id } });
-                    withdrawal.amount = transaction.amount_usd;
-                    withdrawal.status = WithdrawalStatus.DONE;
-                    withdrawal.transactionId = transaction.id;
-                    withdrawal.type = WithdrawalType.WITHDRAW;
-                    withdrawal.user_id = id;
+                            let withdrawal = await getRepository(Withdrawal).findOne(
+                                { where: { transactionId: transaction.id } });
+                            withdrawal.amount = transaction.amount_usd;
+                            withdrawal.status = WithdrawalStatus.DONE;
+                            withdrawal.transactionId = transaction.id;
+                            withdrawal.type = WithdrawalType.WITHDRAW;
+                            withdrawal.user_id = id;
 
-                    withdrawal = await getRepository(Withdrawal).save(withdrawal);
-                }
-            });
+                            withdrawal = await getRepository(Withdrawal).save(withdrawal);
+
+                            resolve();
+                        }
+                    });
+                });
+            }
+            catch (e) {
+                return res.status(400).send({
+                    msg: "Payout is in pending state",
+                    code: 400
+                });
+            }
+
         } else if (transaction.currency === "payeer") {
 
             if (!user.payeerWallet || user.payeerWallet === "") {
@@ -381,14 +394,15 @@ export class WithdrawalController {
         }
 
         const transporter = nodemailer.createTransport({
-            service: config.mail.service,
+            host: "smtp.yandex.ru",
+            port: 465,
             auth: {
                 user: config.mail.username,
                 pass: config.mail.password
             }
         });
         const mailOptions = {
-            from: "robofxtrading19@gmail.com",
+            from: config.mail.username,
             to: user.email,
             subject: `Подтверждение выплаты ${transaction.id}`,
             text: "Здравствуйте,\n\n" +

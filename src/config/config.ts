@@ -2,8 +2,8 @@ export default {
     jwtSecret: "bruhMoment",
     mail: {
         service: "gmail",
-        username: "robofxtrading19@gmail.com",
-        password: "neqrod-kYjkux-jexro0"
+        username: "general@robofxtrading.net",
+        password: "ZAd2HLEmZyqPtfd2"
     },
     blockio: {
         pin: "sni2002001",

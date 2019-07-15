@@ -349,7 +349,7 @@ export class WithdrawalController {
             });
         }
 
-        await getRepository(VerificationToken).remove(token);
+        if (token) await getRepository(VerificationToken).remove(token);
 
         return res.status(200).send();
     }

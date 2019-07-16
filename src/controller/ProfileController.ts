@@ -2,7 +2,7 @@ import { ClassMiddleware, Controller, Get, Patch, Post } from "@overnightjs/core
 import { Request, Response } from "express-serve-static-core";
 import { toDataURL } from "qrcode";
 import { generateSecret, otpauthURL, totp } from "speakeasy";
-import { getRepository } from "typeorm";
+import { getRepository, Any } from "typeorm";
 import AuthorizationEntry from "../entity/AuthorizationEntry";
 import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit, { DepositStatus } from "../entity/Deposit";
@@ -188,24 +188,10 @@ export class ProfileController {
 
         const user = await getRepository(User).findOne(id);
 
-        if (req.body.bitcoinWallet !== undefined) {
-            user.bitcoinWallet = req.body.bitcoinWallet;
-        }
-
-        if (req.body.payeerWallet !== undefined) {
-            user.payeerWallet = req.body.payeerWallet;
-        }
-
-        if (req.body.litecoinWallet !== undefined) {
-            user.litecoinWallet = req.body.litecoinWallet;
-        }
-
-        if (req.body.dogecoinWallet !== undefined) {
-            user.dogecoinWallet = req.body.dogecoinWallet;
-        }
-
-        if (req.body.pwWallet !== undefined) {
-            user.pwWallet = req.body.pwWallet;
+        for (const key in req.body) {
+            if (user.hasOwnProperty(key)) {
+                user[key] = req.body[key];
+            }
         }
 
         await getRepository(User).save(user);
@@ -245,7 +231,22 @@ export class ProfileController {
     private async profits(req: Request, res: Response) {
         const id = res.locals.jwtPayload.userId;
 
-        const profits = await getRepository(Profit).find({ where: { user_id: id }});
+        const { type } = req.query;
+
+        let profits;
+
+        if (type) {
+
+            const types: string[] = (type as string).split(",");
+
+            profits = await getRepository(Profit).find({ where: {
+                user_id: id,
+                type: Any(types)
+            }});
+
+        } else {
+            profits = await getRepository(Profit).find({ where: { user_id: id }});
+        }
 
         return res.status(200).send(profits);
     }

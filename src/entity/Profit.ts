@@ -41,4 +41,7 @@ export default class Profit {
 
     @Column({ nullable: true })
     public referral_level: number;
+
+    @Column({ nullable: true, default: new Date(Date.now()) })
+    public date: Date;
 }

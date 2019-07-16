@@ -85,6 +85,12 @@ export default class User {
     public payeerWallet: string;
 
     @Column({ default: "" })
+    public ethereumWallet: string;
+
+    @Column({ default: "" })
+    public cardNumber: string;
+
+    @Column({ default: "" })
     public payPin: string;
 
     @Column({ default: false })

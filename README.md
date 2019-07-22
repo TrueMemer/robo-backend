@@ -1,141 +1,75 @@
-# robo-backend
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
+</p>
 
-Использует базу данных PostgreSQL.
+[travis-image]: https://api.travis-ci.org/nestjs/nest.svg?branch=master
+[travis-url]: https://travis-ci.org/nestjs/nest
+[linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
+[linux-url]: https://travis-ci.org/nestjs/nest
+  
+  <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable server-side applications, heavily inspired by <a href="https://angular.io" target="blank">Angular</a>.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/dm/@nestjs/core.svg" alt="NPM Downloads" /></a>
+<a href="https://travis-ci.org/nestjs/nest"><img src="https://api.travis-ci.org/nestjs/nest.svg?branch=master" alt="Travis" /></a>
+<a href="https://travis-ci.org/nestjs/nest"><img src="https://img.shields.io/travis/nestjs/nest/master.svg?label=linux" alt="Linux" /></a>
+<a href="https://coveralls.io/github/nestjs/nest?branch=master"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#5" alt="Coverage" /></a>
+<a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
+<a href="https://opencollective.com/nest#backer"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec"><img src="https://img.shields.io/badge/Donate-PayPal-dc3d53.svg"/></a>
+  <a href="https://twitter.com/nestframework"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-Название базы данных - `robofxtrading`. Ее нужно создать до запуска сервера.
+## Description
 
-Сначала нужно прописать - `npm i`.
-Чтобы создать администратора - `npm run migration:run`. Логин и пароль - `admin`.
-Запустить для разработки - `npm start`. Таблицы создадутся сами при первом запуске.
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Методы API
+## Installation
 
-При каждом новом запросе на любой метод в заголовке Authorization ответа возвращается новый токен.
-
-`POST /auth/login` - ожидает данные пользователя и возвращает токен. Токен действует 1 час.
-
-Пример:
-
-```json
-{ "username": "admin", "password": "admin" } // => eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...
+```bash
+$ npm install
 ```
 
----
+## Running the app
 
-`POST /auth/change-password` - меняет пароль пользователя.
+```bash
+# development
+$ npm run start
 
-Пример:
+# watch mode
+$ npm run start:dev
 
-```json
-{ "oldPassword": "test", "newPassword": "test1" } // => 204
+# production mode
+$ npm run start:prod
 ```
 
----
+## Test
 
-`GET /user/` - возвращает список всех пользователей. Только для роли ADMIN.
+```bash
+# unit tests
+$ npm run test
 
----
+# e2e tests
+$ npm run test:e2e
 
-`POST /user/` - регистрирует нового пользователя. Токен не требуется. Отправляет подтверждение на почту.
-
-```json
-{ "username": "test", "password": "test", "email": "test@mail.ru" } // => 201
+# test coverage
+$ npm run test:cov
 ```
 
----
+## Support
 
-`GET /user/:id` - возвращает пользователя по ID. Только для роли ADMIN.
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
----
+## Stay in touch
 
-`PATCH /user/:id` - изменяет пользователя по ID. Только для роли ADMIN.
+- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
-Пример:
+## License
 
-```json
-{ "username": "changed", "role": "ADMIN" } // => 204
-```
-
----
-
-`DELETE /user/:id` - удаляет пользователя по ID. Только для роли ADMIN.
-
----
-
-`GET /user/confirmation` - метод который используется для подтверждения почты.
-
----
-
-`GET /profile` - возвращает профиль текущего пользователя.
-
----
-
-`GET /profile/addBalanceHistory` - возвращает список транзакций пополнения для текущего пользователяю
-
----
-
-`GET /profile/getDeposits` - возвращает список депозитов пользователя.
-
----
-
-`POST /payment/crypto/createPayment` - создает транзацию пополнения с заданными параметрами для текущего пользователя.
-
-Пример тела:
-
-```json
-{ "currency": "litecoin", "amount_usd": 1 }
-```
-
-Пример ответа:
-
-```json
-{
-    "user_id": 1,
-    "currency": "litecoin",
-    "amount_usd": 1,
-    "amount_currency": 0.0096237, // эквивалент указанной суммы в указанной криптовалюте
-    "dateCreated": "2019-06-04T16:39:24.793Z",
-    "receive_address": "2NEoQoUsgLinccpJdRrh6E1roCkTeNc5UYm", // адрес, куда нужно переводить
-    "type": 1,
-    "dateDone": null,
-    "id": "e6efc94f-15c0-4f0b-bcf2-ab613b39cc9a", // уникальный ид транзации
-    "status": 2 // статус сделки, возможные варианты смотри в модели CryptoTransaction
-}
-```
-
----
-
-`POST /payment/crypto/checkPayment` - проверка статуса транзакции пополнения.
-
-Пример:
-
-```json
-{
-	"uuid": "e6efc94f-15c0-4f0b-bcf2-ab613b39cc9a"
-}
-```
-
-Ответ:
-
-```json
-{
-    "id": "e6efc94f-15c0-4f0b-bcf2-ab613b39cc9a",
-    "user_id": 1,
-    "currency": "litecoin_testnet",
-    "type": 1,
-    "amount_usd": 1,
-    "amount_currency": 0.0096237,
-    "receive_address": "2NEoQoUsgLinccpJdRrh6E1roCkTeNc5UYm",
-    "status": 0, // сделка прошла успешно
-    "dateCreated": "2019-06-04T16:39:24.793Z",
-    "dateDone": "2019-06-04T16:40:08.613Z" // дата закрытия
-}
-```
-
-`POST /payment/crypto/cancelPendingPayment` - отмена ожидающей транзакции пополнения.
-
-Пример:
-
-```json
-{ "uuid": "5cdec60c-12c8-4ea2-b98a-2c20d1c4ebec" } // => 200
-```
+  Nest is [MIT licensed](LICENSE).

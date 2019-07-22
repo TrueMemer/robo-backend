@@ -18,8 +18,6 @@ export enum UserRole {
 export default class User {
 
     @PrimaryGeneratedColumn()
-    @IsNotEmpty()
-    @IsNumber()
     public id: number;
 
     @Column()
@@ -59,6 +57,9 @@ export default class User {
 
     @Column({ default: new Date(0) })
     public workingDepositTimeEnd: Date;
+
+    @Column({ nullable: true })
+    public firstDepositTime: Date;
 
     @Column({ type: "float", default: 0.0 })
     public pendingDeposit: number;
@@ -104,6 +105,12 @@ export default class User {
 
     @Column({ default: 0 })
     public bonusLevel: number;
+
+    @Column({ nullable: true })
+    public telegram_id: string;
+
+    @Column({ nullable: true })
+    public telegram_language: string;
 
     @Column()
     @CreateDateColumn()
@@ -172,6 +179,7 @@ export default class User {
             .createQueryBuilder("withdrawal")
             .where("withdrawal.user_id = :id", { id: this.id })
             .andWhere("withdrawal.type = '0'")
+            .andWhere("withdrawal.status = '1'")
             .select("sum(withdrawal.amount)", "withdrawedTotal")
             .getRawOne();
 

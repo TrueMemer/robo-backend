@@ -38,7 +38,7 @@ export class PerfectMoneyController {
 
     @Post("fail")
     private async fail(req: Request, res: Response) {
-        res.send(200);
+        res.redirect("/profile/addbalance");
     }
 
 }

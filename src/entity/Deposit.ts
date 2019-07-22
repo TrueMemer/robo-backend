@@ -1,7 +1,8 @@
-import { IsNotEmpty, Min } from "class-validator";
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, AfterInsert, getRepository } from "typeorm";
+import { IsNotEmpty, Min, IsNumber } from "class-validator";
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, AfterInsert, getRepository, AfterUpdate } from "typeorm";
 import User from "./User";
 import Profit, { ProfitType } from "./Profit";
+import moment = require("moment");
 
 export enum DepositStatus {
     PENDING,
@@ -22,9 +23,10 @@ export default class Deposit {
 
     @Column()
     @IsNotEmpty()
+    @IsNumber()
     public user_id: number;
 
-    @Column()
+    @Column({ default: "" })
     public transactionId: string;
 
     @Column({ type: "float" })
@@ -35,6 +37,7 @@ export default class Deposit {
     @Column({
         type: "enum",
         enum: DepositStatus,
+        default: DepositStatus.PENDING
     })
     public status: DepositStatus;
 
@@ -45,10 +48,12 @@ export default class Deposit {
     })
     public type: DepositType;
 
-    @Column()
+    @Column({
+        default: new Date(moment().utc().hours(20).minutes(59).add(48, "hours").format())
+    })
     public pendingEndTime: Date;
 
-    @CreateDateColumn({ nullable: true })
+    @CreateDateColumn({ nullable: true, default: new Date(Date.now()) })
     public created: Date;
 
     @AfterInsert()
@@ -82,6 +87,30 @@ export default class Deposit {
                 p.referral_id = user.id;
 
                 await getRepository(Profit).save(p);
+            }
+        }
+
+        await getRepository(User).save(user);
+
+    }
+
+    @AfterInsert()
+    @AfterUpdate()
+    public async updateTimer() {
+
+        const user = await getRepository(User).findOne(this.user_id);
+
+        const workingDepo = await user.getWorkingDepo();
+
+        if (workingDepo === 0) {
+            user.workingDepositTimeEnd = new Date(0);
+
+            if (workingDepo <= 1000) {
+                user.workingDepositTimeEnd = new Date(moment().utc().add(12, "months").format());
+            } else if (workingDepo <= 2500) {
+                user.workingDepositTimeEnd = new Date(moment().utc().add(9, "months").format());
+            } else {
+                user.workingDepositTimeEnd = new Date(moment().utc().add(7, "months").format());
             }
         }
 

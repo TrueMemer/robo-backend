@@ -14,3 +14,4 @@ export * from "./PIPOController";
 export * from "./InterkassaController";
 export * from "./CoinbaseController";
 export * from "./AdminController";
+export * from "./MailController";

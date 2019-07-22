@@ -15,7 +15,7 @@ export class StatsController {
 
         const users = await getRepository(User).count();
         const orders = await getRepository(Order).find(
-            { order: { close_balance: "DESC" } });
+            { order: { close_time: "DESC" } });
         const balance = orders[0].close_balance;
         const { deposited } = await getRepository(Deposit)
                                 .createQueryBuilder("deposit")
@@ -80,8 +80,6 @@ export class StatsController {
                     / rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin).sort(sortGive)[0].rateReceive
             }
         };
-
-        console.log(result.bitcoin)
 
         return res.status(200).send(result);
 

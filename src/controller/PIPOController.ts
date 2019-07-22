@@ -7,7 +7,7 @@ import User from "../entity/User";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import moment = require("moment");
 import md5 = require("md5");
-import Transaction, { TransactionStatus } from "../entity/Transaction";
+import Transaction, { TransactionStatus, TransactionType } from "../entity/Transaction";
 import Deposit, { DepositStatus, DepositType } from "../entity/Deposit";
 
 @Controller("api/payment/pipo")
@@ -36,8 +36,7 @@ export class PayinPayout {
             });
         }
 
-        const formAmount = ((amount * await r.data.ticker.price) +
-            (amount * await r.data.ticker.price) * 0.055).toFixed(2);
+        const formAmount = amount.toFixed(2);
         console.log(formAmount);
 
         let sign_raw = `4283#${uid}#${agentTime}#${formAmount}#79090000001#${md5("W53prbl4uC")}`;
@@ -50,7 +49,7 @@ export class PayinPayout {
             "&agentName=ROBO FX TRADING" +
             "&amount=" + formAmount +
             "&goods=ROBO FX TRADING INVEST" +
-            "&currency=USD" +
+            "&currency=RUR" +
             "&addInfo_userid=" + user.id +
             "&email=" + user.email +
             "&phone=79090000001" +
@@ -58,6 +57,16 @@ export class PayinPayout {
             "&sign=" + md5(sign_raw);
 
         console.log(address);
+
+        const t = new Transaction();
+        t.amount_usd = formAmount;
+        t.currency = "Card USD";
+        t.dateCreated = new Date(Date.now());
+        t.status = TransactionStatus.PENDING;
+        t.user_id = user.id;
+        t.type = TransactionType.PAYIN;
+
+        await getRepository(Transaction).save(t);
 
         return res.status(200).send({
             url: address
@@ -90,11 +99,15 @@ export class PayinPayout {
             d.user_id = req.body.addInfo_userid;
 
             d = await getRepository(Deposit).save(d);
+
+            return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><response><result>0</result></response>`);
         } else if(req.body.paymentStatus == 2) {
             t.dateDone = new Date(Date.now());
             t.status = TransactionStatus.FAILED;
 
             t = await getRepository(Transaction).save(t);
+
+            return res.send(`<?xml version="1.0" encoding="UTF-8"?><response><result>1</result></response>`);
         }
 
     }

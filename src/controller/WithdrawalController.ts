@@ -15,7 +15,9 @@ import CryptoNames from "../helpers/CryptoNames";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import * as blockio from "block_io";
 import * as qs from "qs";
-import { BestchangeIds } from "../helpers/BestchangeIds";
+import { BestchangeIds } from "../helpers/BestchangeIds";
+import { load as htmlLoad } from "cheerio";
+
 import * as bestchange from "node-bestchange";
 
 @Controller("api/withdraw")
@@ -424,6 +426,51 @@ export class WithdrawalController {
             withdrawal.user_id = id;
 
             withdrawal = await getRepository(Withdrawal).save(withdrawal);
+
+        } else if (transaction.currency === "perfectmoney") {
+
+            if (!user.pwWallet || user.pwWallet === "") {
+                return res.status(400).send({
+                    msg: "No Perfect Money wallet",
+                    code: 400
+                });
+            }
+
+            const resp = await axios.get("https://perfectmoney.is/acct/confirm.asp", {
+                params: {
+                    AccountID: config.perfect_money.account_id,
+                    PassPhrase: config.perfect_money.password,
+                    Payer_Account: config.perfect_money.payer_wallet,
+                    Payee_Account: user.pwWallet,
+                    Amount: transaction.amount_usd,
+                    PAYMENT_ID: transaction.id
+                }
+            });
+
+            const $ = htmlLoad(await resp.data);
+            if ($("input")[0].attribs.name === "ERROR") {
+                console.log($("input")[0].data);
+                return res.status(400).send({
+                    msg: "Выплата в ожидающем состоянии. Повторите подтверждение позже.",
+                    code: 400
+                });
+            }
+
+            transaction.dateDone = new Date(Date.now());
+            transaction.status = TransactionStatus.DONE;
+
+            transaction = await getRepository(Transaction).save(transaction);
+
+            let withdrawal = await getRepository(Withdrawal).findOne(
+                { where: { transactionId: transaction.id } });
+            withdrawal.amount = transaction.amount_usd;
+            withdrawal.status = WithdrawalStatus.DONE;
+            withdrawal.transactionId = transaction.id;
+            withdrawal.type = WithdrawalType.WITHDRAW;
+            withdrawal.user_id = id;
+
+            withdrawal = await getRepository(Withdrawal).save(withdrawal);
+
 
         } else {
             res.status(400).send({

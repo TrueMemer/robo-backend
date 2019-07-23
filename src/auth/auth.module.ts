@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
 import { UserService } from '../user/user.service';
@@ -8,7 +8,9 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from "@nestjs/jwt";
 import { jwtConstants } from './auth.constants';
 import { JwtStrategy } from './jwt.strategy';
+import { AuthMiddleware } from './auth.middleware';
 
+@Global()
 @Module({
 	imports: [
 		UserModule,
@@ -17,7 +19,7 @@ import { JwtStrategy } from './jwt.strategy';
 			signOptions: { expiresIn: "1h" }
 		})
 	],
-  	providers: [AuthService, LocalStrategy, JwtStrategy],
+  	providers: [AuthService, LocalStrategy, JwtStrategy, AuthMiddleware],
   	controllers: [AuthController],
   	exports: [AuthService]
 })

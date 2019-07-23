@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { UserLoginDto } from './dto/userLogin.dto';
 import { JwtService } from "@nestjs/jwt";
@@ -17,7 +17,7 @@ export class AuthService {
 
 		const user = await this.userService.findOneByUsername(username);
 
-		if (user && user.password === password) {
+		if (user && user.comparePasswordWithHash(password)) {
 			const { password, ...result } = user;
       		return result;
 		}
@@ -26,6 +26,11 @@ export class AuthService {
 	}
 
 	async login(user: any) {
+
+		if (user.verified === false) {
+			throw new UnauthorizedException('User is not verified');
+		}
+
 		const payload = { username: user.username, sub: user.id };
 
 		return {

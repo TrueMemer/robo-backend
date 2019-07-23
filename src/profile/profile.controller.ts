@@ -10,7 +10,6 @@ export class ProfileController {
 		private readonly userService: UserService
 	) {}
 
-	@UseGuards(AuthGuard("jwt"))
 	@Get()
 	async me(@Request() req) {
 

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { ConfigService } from './config/config.service';
 import { ConfigModule } from './config/config.module';
@@ -7,6 +7,11 @@ import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
+import { AuthMiddleware } from './auth/auth.middleware';
+import { ProfileController } from './profile/profile.controller';
+import { VerificationTokenService } from './user/verification-token/verification-token.service';
+import { MailService } from './mail/mail.service';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -23,12 +28,16 @@ import { ProfileModule } from './profile/profile.module';
   		}),
   		UserModule,
   		AuthModule,
-  		ProfileModule
+  		ProfileModule,
   	],
   controllers: [AppController],
 })
-export class AppModule {
-	constructor(config: ConfigService) {
+export class AppModule implements NestModule {
+  	constructor(config: ConfigService) {
 
-	}
+  	}
+
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(AuthMiddleware).forRoutes(ProfileController);
+    }
 }

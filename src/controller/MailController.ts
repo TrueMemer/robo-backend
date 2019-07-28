@@ -2,10 +2,8 @@ import { Controller, Post } from "@overnightjs/core";
 import { IsNotEmpty, IsEmail, validate } from "class-validator";
 import { Request, Response } from "express";
 import { createTransport } from "nodemailer";
-import config from "../config/config";
-
-import { MailOptions } from "nodemailer/lib/smtp-transport";
-
+import config from "../config/config";
+import { MailOptions } from "nodemailer/lib/smtp-transport";
 
 class MailFormDto {
 

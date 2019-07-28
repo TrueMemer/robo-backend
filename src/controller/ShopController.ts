@@ -57,6 +57,7 @@ export class ShopController {
         fee.user_id = id;
         fee.profit = -1;
         fee.type = ProfitType.OTHER;
+        fee.date = new Date (Date.now());
 
         fee = await getRepository(Profit).save(fee);
 
@@ -65,6 +66,7 @@ export class ShopController {
             a.profit = award;
             a.type = ProfitType.BONUS;
             a.user_id = user.id;
+            a.date = new Date(Date.now());
 
             a = await getRepository(Profit).save(a);
         }

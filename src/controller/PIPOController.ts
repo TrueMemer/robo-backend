@@ -107,11 +107,15 @@ export class PayinPayout {
             d.user_id = req.body.addInfo_userid;
 
             d = await getRepository(Deposit).save(d);
+
+            return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><response><result>0</result></response>`);
         } else if(req.body.paymentStatus == 2) {
             t.dateDone = new Date(Date.now());
             t.status = TransactionStatus.FAILED;
 
             t = await getRepository(Transaction).save(t);
+
+            return res.send(`<?xml version="1.0" encoding="UTF-8"?><response><result>1</result></response>`);
         }
 
 	    return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><response><result>0</result></response>`);

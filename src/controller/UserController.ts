@@ -10,6 +10,7 @@ import User, { UserRole } from "../entity/User";
 import { VerificationToken, VerificationTokenType } from "../entity/VerificationToken";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import { RoleChecker } from "../middlewares/RoleChecker";
+import Axios from "axios";
 
 @Controller("api/user")
 export default class UserController {
@@ -45,7 +46,37 @@ export default class UserController {
     @Post("")
     private async newUser(req: Request, res: Response) {
 
-        const { username, password, email, referrer } = req.body;
+        const { username, password, email, referrer, recaptcha_token } = req.body;
+
+        if (!recaptcha_token) {
+            return res.status(400).send({
+                msg: "Invalid captcha",
+                code: 400
+            });
+        };
+
+        const captcha_params = {
+            secret: config.recaptcha_key,
+            response: recaptcha_token,
+            remote_ip: req.ip
+        };
+
+        console.log(captcha_params);
+
+        const captcha_res = await (await Axios({
+            url: "https://www.google.com/recaptcha/api/siteverify", 
+            params: captcha_params, 
+            method: "POST"
+        })).data;
+
+        if (captcha_res.success === false) {
+            console.log(captcha_res)
+            return res.status(400).send({
+                msg: "Invalid captcha",
+                code: 400
+            })
+        }
+
         let user = new User();
         user.username = username;
         user.password = password;
@@ -55,6 +86,7 @@ export default class UserController {
 
         const errors = await validate(user);
         if (errors.length > 0) {
+            console.log(errors)
             return res.status(400).send({
                 msg: "Validation error",
                 code: 400,
@@ -68,6 +100,7 @@ export default class UserController {
         try {
             user = await userRepository.save(user);
         } catch (e) {
+            console.log(e);
             return res.status(409).send({
                 msg: "Conflict (username or email is already used)",
                 code: 409

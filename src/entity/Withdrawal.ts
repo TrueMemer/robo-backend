@@ -39,7 +39,8 @@ export default class Withdrawal {
 
     @Column({
         type: "enum",
-        enum: WithdrawalStatus
+        enum: WithdrawalStatus,
+        default: WithdrawalStatus.PENDING
     })
     public status: WithdrawalStatus;
 

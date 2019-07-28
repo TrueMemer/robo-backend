@@ -57,6 +57,9 @@ export default class User {
     @Column({ default: new Date(0) })
     public workingDepositTimeEnd: Date;
 
+    @Column({ nullable: true })
+    public firstDepositTime: Date;
+
     @Column({ type: "float", default: 0.0 })
     public pendingDeposit: number;
 
@@ -80,6 +83,12 @@ export default class User {
 
     @Column({ default: "" })
     public payeerWallet: string;
+
+    @Column({ default: "" })
+    public ethereumWallet: string;
+
+    @Column({ default: "" })
+    public cardNumber: string;
 
     @Column({ default: "" })
     public payPin: string;
@@ -169,7 +178,7 @@ export default class User {
             .createQueryBuilder("withdrawal")
             .where("withdrawal.user_id = :id", { id: this.id })
             .andWhere("withdrawal.type = '0'")
-	        .andWhere("withdrawal.status = '1'")
+            .andWhere("withdrawal.status = '1'")
             .select("sum(withdrawal.amount)", "withdrawedTotal")
             .getRawOne();
 

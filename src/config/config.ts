@@ -1,5 +1,6 @@
 export default {
     jwtSecret: "bruhMoment",
+    recaptcha_key: "6Lfr0K4UAAAAAD9SbQaH223kGddNK33tSomslmLZ",
     mail: {
         service: "gmail",
         username: "general@robofxtrading.net",
@@ -28,7 +29,10 @@ export default {
         account_id: "72"
     },
     perfect_money: {
-        passphrase: "T8xc1Q4L9c4gQTFoowFHbmoHZ"
+        account_id: "9365571",
+        payer_wallet: "U19954694",
+        passphrase: "T8xc1Q4L9c4gQTFoowFHbmoHZ",
+        password: "2oW~d5m0"
     },
     coinbase: {
         api_key: "077110b7-7580-4d14-afd7-de2dc015acb7",

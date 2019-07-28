@@ -15,6 +15,10 @@ import CryptoNames from "../helpers/CryptoNames";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import * as blockio from "block_io";
 import * as qs from "qs";
+import { BestchangeIds } from "../helpers/BestchangeIds";
+import { load as htmlLoad } from "cheerio";
+
+import * as bestchange from "node-bestchange";
 
 @Controller("api/withdraw")
 @ClassMiddleware([JWTChecker])
@@ -36,7 +40,14 @@ export class WithdrawalController {
             });
         }
 
-        if (amount > user.getFreeDeposit() || amount <= 0) {
+        const { pendingWithdraws } = await getRepository(Withdrawal)
+                            .createQueryBuilder("withdrawal")
+                            .select("sum(amount)", "pendingWithdraws")
+                            .where("status = '0'")
+                            .andWhere("type = '0'")
+                            .getRawOne();
+
+        if (amount > user.getFreeDeposit() + pendingWithdraws || amount <= 0) {
             return res.status(400).send({
                 msg: "Insufficient balance",
                 code: 400
@@ -49,22 +60,34 @@ export class WithdrawalController {
         //     });
         // }
 
+        const api = await (new bestchange("./cache")).load();
+        let rates;
+
+        try {
+            rates = await api.getRates().filter(BestchangeIds.visa_usd, BestchangeIds[currency]);
+        } catch (e) {
+            console.log(e);
+            return res.status(400).send({
+                msg: "Currency is not supported",
+                code: 400,
+                currency
+            });
+        }
+
+        rates = rates.sort((a, b) => a.rateGive - b.rateGive);
+
         let w_amount = 0;
         let transaction;
 
         if (currency in CryptoNames) {
-            let r;
-            try {
-                r = await axios.get(`https://api.cryptonator.com/api/ticker/usd-${CryptoNames[currency]}`);
-            } catch (error) {
-                return res.status(400).send({
-                    msg: "No currency with that name was found",
-                    code: 400,
-                    currency
-                });
-            }
 
-            w_amount = parseFloat((await r.data.ticker.price * amount).toFixed(8));
+            //w_amount = parseFloat((await r.data.ticker.price * amount).toFixed(8));
+            //console.log(rates);
+            if (rates[0].rateGive === 1) {
+                w_amount = rates[0].rateReceive * amount;
+            } else {
+                w_amount = parseFloat((1 / rates[0].rateGive).toFixed(8)) * amount;
+            }
 
             let address = "";
 
@@ -134,6 +157,68 @@ export class WithdrawalController {
             if (resp.errors.length !== 0) {
                 return res.status(400).send({
                     msg: "Payout is not possible",
+                    code: 400
+                });
+            }
+
+            transaction = new Transaction();
+            transaction.amount_usd = amount;
+            transaction.currency = currency;
+            transaction.dateCreated = new Date(Date.now());
+            transaction.status = TransactionStatus.PENDING;
+            transaction.type = TransactionType.WITHDRAWAL;
+            transaction.user_id = id;
+
+            transaction = await getRepository(Transaction).save(transaction);
+
+            let withdrawal = new Withdrawal();
+            withdrawal.amount = transaction.amount_usd;
+            withdrawal.status = WithdrawalStatus.PENDING;
+            withdrawal.transactionId = transaction.id;
+            withdrawal.type = WithdrawalType.WITHDRAW;
+            withdrawal.user_id = id;
+
+            withdrawal = await getRepository(Withdrawal).save(withdrawal);
+        } else if (currency === "ethereum") {
+
+            if (!user.ethereumWallet || user.ethereumWallet === "") {
+                return res.status(400).send({
+                    msg: "No ethereum wallet",
+                    code: 400
+                });
+            }
+
+            if (rates[0].rateGive === 1) {
+                w_amount = rates[0].rateReceive * amount;
+            } else {
+                w_amount = parseFloat((1 / rates[0].rateGive).toFixed(8)) * amount;
+            }
+
+            transaction = new CryptoTransaction();
+            transaction.amount_usd = amount;
+            transaction.amount_currency = w_amount;
+            transaction.receive_address = user.ethereumWallet;
+            transaction.currency = currency;
+            transaction.dateCreated = new Date(Date.now());
+            transaction.status = TransactionStatus.PENDING;
+            transaction.type = TransactionType.WITHDRAWAL;
+            transaction.user_id = id;
+
+            transaction = await getRepository(CryptoTransaction).save(transaction);
+
+            let withdrawal = new Withdrawal();
+            withdrawal.amount = transaction.amount_usd;
+            withdrawal.status = WithdrawalStatus.PENDING;
+            withdrawal.transactionId = transaction.id;
+            withdrawal.type = WithdrawalType.WITHDRAW;
+            withdrawal.user_id = id;
+
+            withdrawal = await getRepository(Withdrawal).save(withdrawal);
+        } else if (currency === "perfectmoney") {
+
+            if (!user.pwWallet || user.pwWallet === "") {
+                return res.status(400).send({
+                    msg: "No Perfect Money wallet",
                     code: 400
                 });
             }
@@ -341,6 +426,51 @@ export class WithdrawalController {
             withdrawal.user_id = id;
 
             withdrawal = await getRepository(Withdrawal).save(withdrawal);
+
+        } else if (transaction.currency === "perfectmoney") {
+
+            if (!user.pwWallet || user.pwWallet === "") {
+                return res.status(400).send({
+                    msg: "No Perfect Money wallet",
+                    code: 400
+                });
+            }
+
+            const resp = await axios.get("https://perfectmoney.is/acct/confirm.asp", {
+                params: {
+                    AccountID: config.perfect_money.account_id,
+                    PassPhrase: config.perfect_money.password,
+                    Payer_Account: config.perfect_money.payer_wallet,
+                    Payee_Account: user.pwWallet,
+                    Amount: transaction.amount_usd,
+                    PAYMENT_ID: transaction.id
+                }
+            });
+
+            const $ = htmlLoad(await resp.data);
+            if ($("input")[0].attribs.name === "ERROR") {
+                console.log($("input")[0].data);
+                return res.status(400).send({
+                    msg: "Выплата в ожидающем состоянии. Повторите подтверждение позже.",
+                    code: 400
+                });
+            }
+
+            transaction.dateDone = new Date(Date.now());
+            transaction.status = TransactionStatus.DONE;
+
+            transaction = await getRepository(Transaction).save(transaction);
+
+            let withdrawal = await getRepository(Withdrawal).findOne(
+                { where: { transactionId: transaction.id } });
+            withdrawal.amount = transaction.amount_usd;
+            withdrawal.status = WithdrawalStatus.DONE;
+            withdrawal.transactionId = transaction.id;
+            withdrawal.type = WithdrawalType.WITHDRAW;
+            withdrawal.user_id = id;
+
+            withdrawal = await getRepository(Withdrawal).save(withdrawal);
+
 
         } else {
             res.status(400).send({

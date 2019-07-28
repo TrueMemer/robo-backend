@@ -21,6 +21,12 @@ export class CalculateController {
 
         const { amount, months, reinvestInterval } = req.body;
 
+    	let regex = /^(\+|-)?\d+$/;
+
+    	if (!regex.test(amount) || !regex.test(months) || !regex.test(reinvestInterval)) {
+    	    return res.status(400).send("Хорошая попытка братан");
+    	}
+
         console.log(`../../lib/calc ${amount} ${months} ${reinvestInterval}`);
 
         const output = await execShellCommand(`./lib/calc ${amount} ${months} ${reinvestInterval}`);

@@ -24,8 +24,9 @@ export default class RoboServer extends Server {
         if (process.env.NODE_ENV === "development") {
             this.app.use(morgan("dev"));
         }
-        this.app.use(bodyParser.json());
-        this.app.use(bodyParser.urlencoded({ extended: true }));
+        this.app.use(bodyParser.json({limit: '50mb', strict: false}));
+        this.app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+	    this.app.use((req, res, next) => { console.log(req.body); next(); })
         this.app.set("trust proxy", true);
         this.setupDatabase();
         this.setupCron();

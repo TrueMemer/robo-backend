@@ -11,7 +11,7 @@ export class MT4Controller {
 
         let orders: Order[];
 
-        orders = JSON.parse(req.body) as Order[];
+        orders = req.body as Order[];
 
         for (const order of orders) {
             if ((await getRepository(Order).find({ where: { ticket: order.ticket } })).length < 1) {
@@ -23,11 +23,12 @@ export class MT4Controller {
 
                     order.open_balance = o[o.length - 1].close_balance;
                 }
-
+		console.log("a");
                 await getRepository(Order).save(order);
             } else {
                 const o = await getRepository(Order).findOneOrFail({where: {ticket: order.ticket}});
-
+		
+		o.open_balance = order.open_balance;		
                 o.close_balance = order.close_balance;
                 o.close_time = order.close_time;
                 o.profit = order.profit;

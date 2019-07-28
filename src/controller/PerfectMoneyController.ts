@@ -13,6 +13,17 @@ export class PerfectMoneyController {
     @Post("status")
     private async status(req: Request, res: Response) {
 
+        let ips = [
+            "77.109.141.170",
+            "91.205.41.208",
+            "94.242.216.60",
+            "78.41.203.75"
+        ];
+
+        if (!ips.includes(req.ip)) {
+             return res.status(401).send();
+        }
+
         let transaction = new Transaction();
         transaction.amount_usd = parseFloat(req.body.PAYMENT_AMOUNT);
         transaction.user_id = parseInt(req.body.USER_ID, 10);
@@ -38,7 +49,7 @@ export class PerfectMoneyController {
 
     @Post("fail")
     private async fail(req: Request, res: Response) {
-        res.send(200);
+        res.redirect("/profile/addbalance");
     }
 
 }

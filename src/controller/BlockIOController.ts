@@ -27,6 +27,13 @@ export class BlockIOController {
 
         const { currency, amount_usd } = req.body;
 
+        if (amount_usd < 100) {
+            return res.status(400).send({
+                msg: "Minimal is 100$",
+                code: 400
+            });
+        }
+
         p.user_id = user_id;
         p.currency = currency;
         p.amount_usd = amount_usd;

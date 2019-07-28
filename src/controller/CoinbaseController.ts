@@ -12,6 +12,7 @@ import Deposit, { DepositStatus, DepositType } from "../entity/Deposit";
 import moment = require("moment");
 import { BestchangeIds } from "../helpers/BestchangeIds";
 import * as bestchange from "node-bestchange";
+import * as crypto from "crypto";
 
 @Controller("api/payment/coinbase")
 export class CoinbaseController {
@@ -32,6 +33,13 @@ export class CoinbaseController {
                 code: 400
             });
         }
+
+    	if (amount < 100) {
+    	    return res.status(400).send({
+    	    	msg: "Minimum deposit is 100$",
+    		    code: 400
+            });
+    	}
 
         const api = await (new bestchange("./cache")).load();
         let rates;
@@ -97,6 +105,16 @@ export class CoinbaseController {
 
     @Post("status")
     private async status(req: Request, res: Response) {
+
+        if (!req.headers["x-cc-webhook-signature"]) {
+            return res.status(401).send();
+        } else {
+            const hmac = crypto.createHmac("sha256", "a8e309cd-982d-46e6-8290-5c897b08cb2b").update(JSON.stringify(req.body)).digest('hex');
+
+            if (req.headers["x-cc-webhook-signature"] !== hmac) {
+                return res.status(401).send();
+            }
+        }
 
         const event = req.body.event;
 

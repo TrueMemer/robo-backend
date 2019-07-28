@@ -18,10 +18,9 @@ export const ReferralProfits = [
 export default async () => {
 
     const users: User[] = await getRepository(User).find();
+    Logger.Imp("Recalculate profits begin");
 
     for (const user of users) {
-
-        Logger.Imp(`User start [${user.id}] ${user.username}:`);
 
         const deposits = await getRepository(Deposit).find(
             { where: { user_id: user.id, status: DepositStatus.WORKING }, order: { pendingEndTime: "ASC" }
@@ -30,8 +29,6 @@ export default async () => {
         let workingDep = 0.0;
 
         for (let i = 0; i < deposits.length; i++) {
-
-            Logger.Imp(`Deposit start ${deposits[i].id}: ${deposits[i].pendingEndTime}`);
 
             workingDep += deposits[i].amount;
 
@@ -64,26 +61,21 @@ export default async () => {
                     .getMany();
             }
 
-            for (const order of orders) {
-
-                Logger.Imp(`Order start [${order.id}, ${order.ticket}]`);
+            for (let order of orders) {
 
                 const tmp = await getRepository(Profit).findOne({
                     where: { ticket: order.ticket, user_id: user.id, type: ProfitType.ORDERS }
                 });
 
                 if (tmp) {
-                    Logger.Warn(`Ignoring already calculated profit for order ${order.ticket}`);
                     continue;
                 }
 
                 if (order.type as number === 6) {
-                    Logger.Warn(`Order ${order.ticket} is type 6, ignoring...`);
                     continue;
                 }
 
                 if (order.open_time < deposits[0].pendingEndTime) {
-                    Logger.Warn(`Orders open time is lesser than first deposit time. Ignoring...`);
                     continue;
                 }
 
@@ -97,15 +89,23 @@ export default async () => {
 
                 let profit = new Profit();
 
+        		if (user.id == 2 || user.id == 21 || user.id == 1) {
+        			const { balance } = await getRepository(Order)
+        						.createQueryBuilder("order")
+        						.select("sum(profit + swap + commission)", "balance")
+        						.where("close_time < :date", { date: order.open_time } )
+        						.getRawOne();
+
+        			order.open_balance = balance;
+        		}
+
                 profit.user_id = user.id;
                 profit.ticket = order.ticket;
                 profit.depositFactor = workingDepo / order.open_balance;
-                Logger.Imp(`[${order.ticket}]: DepositFactor: ${profit.depositFactor}`);
                 profit.workingDeposit = workingDepo;
-                Logger.Imp(`[${order.ticket}]: WorkingDep: ${profit.workingDeposit}`);
                 profit.profit = ((order.profit + order.swap) * profit.depositFactor) / 2;
                 profit.ticket = order.ticket;
-                Logger.Imp(`[${order.ticket}]: Profit: ${profit.profit}`);
+		        profit.date = order.close_time;
 
                 profit = await getRepository(Profit).save(profit);
 
@@ -113,7 +113,6 @@ export default async () => {
                     const referrer = await getRepository(User).findOne({ where: { username: user.referral } });
 
                     if (referrer) {
-                        Logger.Imp(`Referral 1 level started [${user.referral}, ${referrer.id}]`);
 
                         let p1 = new Profit();
 
@@ -121,9 +120,9 @@ export default async () => {
                         p1.referral_id = user.id;
                         p1.ticket = order.ticket;
                         p1.profit = (ReferralProfits[referrer.referral_level][0] / 100) * profit.profit;
-                        Logger.Imp(`Referral 1 level profit: ${p1.profit}`);
                         p1.user_id = referrer.id;
                         p1.referral_level = 1;
+			            p1.date = order.close_time;
 
                         p1 = await getRepository(Profit).save(p1);
 
@@ -134,17 +133,15 @@ export default async () => {
 
                             if (referrer2) {
 
-                                Logger.Imp(`Referral 2 level started [${referrer.referral}, ${referrer2.id}]`);
-
                                 let p2 = new Profit();
 
                                 p2.type = ProfitType.REFERRALS;
                                 p2.referral_id = user.id;
                                 p2.ticket = order.ticket;
                                 p2.profit = (ReferralProfits[referrer2.referral_level][1] / 100) * profit.profit;
-                                Logger.Imp(`Referral 2 level profit: ${p2.profit}`);
                                 p2.user_id = referrer2.id;
                                 p2.referral_level = 2;
+				                p2.date = order.close_time;
 
                                 p2 = await getRepository(Profit).save(p2);
                             }
@@ -155,7 +152,6 @@ export default async () => {
                                 });
 
                                 if (referrer3 && referrer3.referral_level > 0) {
-                                    Logger.Imp(`Referral 3 level started [${referrer2.referral}, ${referrer3.id}]`);
 
                                     let p3 = new Profit();
 
@@ -163,9 +159,9 @@ export default async () => {
                                     p3.referral_id = user.id;
                                     p3.ticket = order.ticket;
                                     p3.profit = (ReferralProfits[referrer3.referral_level][1] / 100) * profit.profit;
-                                    Logger.Imp(`Referral 3 level profit: ${p3.profit}`);
                                     p3.user_id = referrer2.id;
                                     p3.referral_level = 3;
+				                    p3.date = order.close_time;
 
                                     p3 = await getRepository(Profit).save(p3);
                                 }
@@ -174,10 +170,8 @@ export default async () => {
                     }
                 }
 
-                Logger.Imp(`End order [${order.id}, ${order.ticket}]`);
             }
 
-            Logger.Imp(`End deposit ${deposits[i].id}: ${deposits[i].pendingEndTime}`);
         }
 
         user.updateBalance();
@@ -185,7 +179,6 @@ export default async () => {
 
         await getRepository(User).save(user);
 
-        Logger.Imp(`User end [${user.id}] ${user.username}:`);
 
     }
 

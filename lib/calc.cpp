@@ -6,7 +6,7 @@
 
 float calculate(int firstDeposit, int months, int reinvestInterval) {
 
-    pqxx::connection c("host=localhost port=5432 dbname=robofxtrading user=postgres password=2oW~d5m0");
+    pqxx::connection c("host=localhost port=5432 dbname=robofxtrading user=postgres password=wQ19!4B3aDfk");
     pqxx::work w(c);
 
     const char * open_date_str = "2019-04-29 18:20:21+00";

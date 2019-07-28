@@ -34,9 +34,6 @@ export class ProfileController {
             });
         }
 
-        const view = await getRepository(UserView).findOne({ where: { id } });
-        console.log(view);
-
         const { ordersTotalIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
                                     .where("profit.type = '0'")
@@ -58,6 +55,7 @@ export class ProfileController {
                                 .createQueryBuilder("withdrawal")
                                 .where("withdrawal.user_id = :id", { id: me.id })
                                 .andWhere("withdrawal.type = '0'")
+				                .andWhere("withdrawal.status = '1'")
                                 .select("sum(withdrawal.amount)")
                                 .getRawOne();
 
@@ -410,6 +408,8 @@ export class ProfileController {
                                     .where("user_id = :id", { id })
                                     .andWhere("status = :status", { status: DepositStatus.WORKING })
                                     .getRawOne();
+	
+	    if (workingDepo < 1 || !workingDepo) return res.status(200).send();
 
         let p = new Profit();
         p.type = ProfitType.DEPOSIT_RETURN;

@@ -55,13 +55,13 @@ export class PayeerController {
     private async success(req: Request, res: Response) {
         console.log(req.body);
 
-        res.redirect("/addbalance");
+        res.redirect("/profile/addbalance");
     }
 
     @Get("fail")
     private async fail(req: Request, res: Response) {
         console.log(req.body);
 
-        res.redirect("/addbalance");
+        res.redirect("/profile/addbalance");
     }
 }

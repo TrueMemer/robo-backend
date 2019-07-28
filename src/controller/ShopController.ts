@@ -1,4 +1,4 @@
-import { ClassMiddleware, Controller, Get, Post } from "@overnightjs/core";
+import { ClassMiddleware, Middleware, Controller, Get, Post } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
 import * as twister from "mersenne-twister";
 import { getRepository } from "typeorm";
@@ -8,7 +8,6 @@ import User from "../entity/User";
 import { JWTChecker } from "../middlewares/JWTChecker";
 
 @Controller("api/shop")
-@ClassMiddleware([JWTChecker])
 export class ShopController {
 
     private chance = 10;
@@ -16,6 +15,7 @@ export class ShopController {
     private bank = ((this.bet * this.chance) / 100) + 1;
 
     @Get("feedRobo")
+    @Middleware([JWTChecker])
     private async feed(req: Request, res: Response) {
 
         const id = res.locals.jwtPayload.userId;
@@ -81,6 +81,7 @@ export class ShopController {
     }
 
     @Post("")
+    @Middleware([JWTChecker])
     private async buy(req: Request, res: Response) {
 
         const { entry_id } = req.body;

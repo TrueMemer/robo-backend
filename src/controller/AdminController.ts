@@ -12,7 +12,8 @@ import Order from "../entity/Order";
 import Profit from "../entity/Profit";
 import Withdrawal from "../entity/Withdrawal";
 import { validate } from "class-validator";
-import recalculateProfits from "../cron/recalculateProfits";
+import recalculateProfits from "../cron/recalculateProfits";
+import moment = require("moment");
 
 
 @Controller("api/cp")
@@ -22,86 +23,170 @@ export class AdminController {
 	@Get("stats")
 	private async getStats(req: Request, res: Response) {
 
-		const begin = req.query.begin;
-		const end = req.query.end;
-
-		console.log(begin)
-
-		const { investedTotal } = await getRepository(Deposit)
-									.createQueryBuilder("deposit")
-									.select("sum(amount)", "investedTotal")
-									.where(`"pendingEndTime" > :begin`, { begin: begin != null ? begin : new Date(0) })
-									.andWhere(`"pendingEndTime" < :end`, { end: end != null ? end : new Date(Date.now()) })
-									.andWhere("type = '0'")
-									.getRawOne();
-
-		const { reinvestedTotal } = await getRepository(Deposit)
-							.createQueryBuilder("deposit")
-							.select("sum(amount)", "reinvestedTotal")
-							.where(`"pendingEndTime" > :begin`, { begin: begin != null ? begin : new Date(0) })
-							.andWhere(`"pendingEndTime" < :end`, { end: end != null ? end : new Date(Date.now()) })
-							.andWhere("type = '1'")
+		let { date } = await getRepository(Order)
+							.createQueryBuilder("order")
+							.select("open_time", "date")
+							.orderBy({ open_time: "ASC" })
+							.limit(1)
 							.getRawOne();
 
-		const { registered } = await getRepository(User)
-								.createQueryBuilder("user")
-								.select("count(*)", "registered")
-								.where(`"createdAt" > :begin`, { begin: begin != null ? begin : new Date(0) })
-								.andWhere(`"createdAt" < :end`, { end: end != null ? end : new Date(Date.now()) })
-								.getRawOne();
+		let first = moment(date).utc().startOf("month").hour(0).minute(0).second(0);
+		let endDate = moment().utc().endOf("month").hour(0).minute(0).second(0);
+		let result = {};
+		let tmp = {};
 
-		const { balance } = await getRepository(Order)
-								.createQueryBuilder("order")
-								.select("close_balance", "balance")
-								.where(`"close_time" > :begin`, { begin: begin != null ? begin : new Date(0) })
-								.andWhere(`"close_time" < :end`, { end: end != null ? end : new Date(Date.now()) })
-								.orderBy({ close_time: "DESC" })
-								.limit(1)
-								.getRawOne();
+		let prevMonth = null;
 
-		const { roboProfit } = await getRepository(Order)
+		while(first < endDate) {
+
+			let end = moment(first);
+			end.endOf("month");
+
+			let investedTotal = (await getRepository(Deposit)
+										.createQueryBuilder("deposit")
+										.select("sum(amount)", "investedTotal")
+										.where(`"pendingEndTime" > :first`, { first })
+										.andWhere(`"pendingEndTime" < :end`, { end })
+										.andWhere("type = '0'")
+										.getRawOne() || {}).investedTotal || 0;
+
+			let reinvestedTotal = (await getRepository(Deposit)
+								.createQueryBuilder("deposit")
+								.select("sum(amount)", "reinvestedTotal")
+								.where(`"pendingEndTime" > :first`, { first })
+								.andWhere(`"pendingEndTime" < :end`, { end })
+								.andWhere("type = '1'")
+								.getRawOne() || {}).reinvestedTotal || 0;
+
+			let registered = (await getRepository(User)
+									.createQueryBuilder("user")
+									.select("count(*)", "registered")
+									.where(`"createdAt" > :first`, { first })
+									.andWhere(`"createdAt" < :end`, { end })
+									.getRawOne() || {}).registered || 0;
+
+			registered = parseInt(registered);
+
+			let balance = (await getRepository(Order)
 									.createQueryBuilder("order")
-									.select("sum(profit + swap + commission)", "roboProfit")
-									.where(`"close_time" > :begin`, { begin: begin != null ? begin : new Date(0) })
-									.andWhere(`"close_time" < :end`, { end: end != null ? end : new Date(Date.now()) })
-									.andWhere("type != '6'")
-									.getRawOne();
+									.select("close_balance", "balance")
+									.where(`"close_time" > :first`, { first })
+									.andWhere(`"close_time" < :end`, { end })
+									.orderBy({ close_time: "DESC" })
+									.limit(1)
+									.getRawOne() || {}).balance || 0;
 
-		let { userProfits } = await getRepository(Profit)
-									.createQueryBuilder("profit")
-									.select("sum(profit)", "userProfits")
-									.where("type = '0'")
-									.orWhere("type = '1'")
-									.orWhere("type = '4'")
-									.where(`date > :begin`, { begin: begin != null ? begin : new Date(0) })
-									.andWhere(`date < :end`, { end: end != null ? end : new Date(Date.now()) })
-									.getRawOne();
+			let roboProfit = (await getRepository(Order)
+										.createQueryBuilder("order")
+										.select("sum(profit + swap + commission)", "roboProfit")
+										.where(`"close_time" > :first`, { first })
+										.andWhere(`"close_time" < :end`, { end })
+										.andWhere("type != '6'")
+										.getRawOne() || {}).roboProfit || 0;
 
-		const { withdraws } = await getRepository(Withdrawal)
-									.createQueryBuilder("withdrawal")
-									.select("sum(amount)", "withdraws")
-									.where("status = '1'")
-									.andWhere("type = '0'")
-									.where(`created > :begin`, { begin: begin != null ? begin : new Date(0) })
-									.andWhere(`created < :end`, { end: end != null ? end : new Date(Date.now()) })
-									.getRawOne();
+			let userProfits = (await getRepository(Profit)
+										.createQueryBuilder("profit")
+										.select("sum(profit)", "userProfits")
+										.where("type = '0'")
+										.orWhere("type = '1'")
+										.orWhere("type = '4'")
+										.where(`date > :first`, { first })
+										.andWhere(`date < :end`, { end })
+										.getRawOne() || {}).userProfits || 0;
 
-		userProfits -= withdraws;
+			let withdraws = (await getRepository(Withdrawal)
+										.createQueryBuilder("withdrawal")
+										.select("sum(amount)", "withdraws")
+										.where("status = '1'")
+										.andWhere("type = '0'")
+										.andWhere(`created > :first`, { first })
+										.andWhere(`created < :end`, { end })
+										.getRawOne() || {}).withdraws || 0;
 
-		const safetyDepo = roboProfit != null ? (10 / 100) * roboProfit : 0;
+			if (prevMonth) {
+				investedTotal += result[prevMonth].invested.total || 0;
+				reinvestedTotal += result[prevMonth].reinvested.total || 0;
+				roboProfit += result[prevMonth].roboProfit.total || 0;
+				userProfits += result[prevMonth].userProfits.total || 0;
+				withdraws += result[prevMonth].withdraws.total || 0;
+				registered += result[prevMonth].registered.total || 0;
+			}
 
-		const ourProfit = balance - (investedTotal + reinvestedTotal + userProfits + safetyDepo);
+			let safetyDepo = (10 / 100) * roboProfit;
 
-		return res.status(200).send({
-			investedTotal: investedTotal != null ? investedTotal : 0,
-			reinvestedTotal,
-			registered: registered != null ? registered : 0,
-			balance,
-			roboProfit,
-			safetyDepo,
-			userProfits,
-			ourProfit
-		});
+			let ourProfit = balance - (investedTotal + reinvestedTotal + userProfits + safetyDepo + withdraws);
+
+			let obj: any = {
+					invested: {
+						total: investedTotal,
+						diff: -(prevMonth ? result[prevMonth].invested.total - investedTotal : 0)
+					},
+					withdraws: {
+						total: withdraws,
+						diff: -(prevMonth ? result[prevMonth].withdraws.total - withdraws : 0)
+					},
+					reinvested: {
+						total: reinvestedTotal,
+						diff: -(prevMonth ? result[prevMonth].reinvested.total - reinvestedTotal : 0)
+					},
+					registered: {
+						total: registered,
+						diff: -(prevMonth ? result[prevMonth].registered.total - registered : 0)
+					},
+					balance: {
+						total: balance,
+						diff: -(prevMonth ? result[prevMonth].balance.total - balance : 0)
+					},
+					roboProfit: {
+						total: roboProfit,
+						diff: -(prevMonth ? result[prevMonth].roboProfit.total - roboProfit : 0)
+					},
+					safetyDepo: {
+						total: safetyDepo,
+						diff: -(prevMonth ? result[prevMonth].safetyDepo.total - safetyDepo : 0)
+					},
+					userProfits: {
+						total: userProfits,
+						diff: -(prevMonth ? result[prevMonth].userProfits.total - userProfits : 0)
+					},
+					ourProfit: {
+						total: ourProfit,
+						diff: -(prevMonth ? result[prevMonth].ourProfit.total - ourProfit : 0)
+					}
+			}
+
+			prevMonth = `${first.month() + 1}/${first.year()}`;
+			obj.date = prevMonth;
+			result[prevMonth] = obj;
+
+			first.add("month", 1);
+
+		}
+
+		console.log(result);
+
+		for (let key in result) {
+			result[key].invested.total = parseFloat(result[key].invested.total).toFixed(2);
+			result[key].invested.diff = parseFloat(result[key].invested.diff).toFixed(2);
+			result[key].withdraws.total = parseFloat(result[key].withdraws.total).toFixed(2);
+			result[key].withdraws.diff = parseFloat(result[key].withdraws.diff).toFixed(2);
+			result[key].reinvested.total = parseFloat(result[key].reinvested.total).toFixed(2);
+			result[key].reinvested.diff = parseFloat(result[key].reinvested.diff).toFixed(2);
+			result[key].balance.total = parseFloat(result[key].balance.total).toFixed(2);
+			result[key].roboProfit.total = parseFloat(result[key].roboProfit.total).toFixed(2);
+			result[key].safetyDepo.total = parseFloat(result[key].safetyDepo.total).toFixed(2);
+			result[key].userProfits.total = parseFloat(result[key].userProfits.total).toFixed(2);
+			result[key].ourProfit.total = parseFloat(result[key].ourProfit.total).toFixed(2);
+			result[key].balance.diff = parseFloat(result[key].balance.diff).toFixed(2);
+			result[key].roboProfit.diff = parseFloat(result[key].roboProfit.diff).toFixed(2);
+			result[key].safetyDepo.diff = parseFloat(result[key].safetyDepo.diff).toFixed(2);
+			result[key].userProfits.diff = parseFloat(result[key].userProfits.diff).toFixed(2);
+			result[key].ourProfit.diff = parseFloat(result[key].ourProfit.diff).toFixed(2);
+		}
+
+		console.log(result);
+
+		return res.status(200).send(Object.values(result));
 
 	}
 
@@ -402,6 +487,8 @@ export class AdminController {
 
 		for (const t of tickets) {
 
+			if (t === "") continue;
+
 			if (userIds.length < 1) {
 
 				// Пересчет сделки для всех
@@ -412,6 +499,8 @@ export class AdminController {
 			} else {
 
 				for (const u of userIds) {
+
+					if (u === "") continue;
 
 					// Удаляем профиты юзера
 					await getRepository(Profit).delete({
@@ -433,6 +522,8 @@ export class AdminController {
 		}
 
 		recalculateProfits();
+
+		return res.status(200).send();
 
 	}
 

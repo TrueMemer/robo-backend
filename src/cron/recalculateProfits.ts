@@ -79,6 +79,8 @@ export default async () => {
                     continue;
                 }
 
+                Logger.Imp(`Пересчет сделки ${order.ticket}`);
+
                 const { workingDepo } = await getRepository(Deposit)
                                         .createQueryBuilder("deposit")
                                         .select("sum(amount)", "workingDepo")

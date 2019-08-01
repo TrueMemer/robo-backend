@@ -1,11 +1,16 @@
 import { Controller, Get } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
-import { getRepository, LessThan } from "typeorm";
-import Deposit from "../entity/Deposit";
+import { getRepository, LessThan, MoreThan } from "typeorm";
+import Deposit, { DepositType } from "../entity/Deposit";
 import Order from "../entity/Order";
 import User from "../entity/User";
 import * as bestchange from "node-bestchange";
 import { BestchangeIds } from "../helpers/BestchangeIds";
+import CryptoTransaction from "../entity/CryptoTransaction";
+
+import Transaction from "../entity/Transaction";
+import Withdrawal from "../entity/Withdrawal";
+
 
 @Controller("api/stats")
 export class StatsController {
@@ -30,7 +35,12 @@ export class StatsController {
 
         const safetyDepo = ordersTotal != null ? (10 / 100) * ordersTotal : 0;
 
-        const withdrawed = 0;
+       const { withdrawed } = await getRepository(Withdrawal)
+                       .createQueryBuilder("withdrawal")
+                       .select("sum(amount)", "withdrawed")
+                       .where("status = '1'")
+                       .andWhere("type = '0'")
+                       .getRawOne();
 
         return res.status(200).send({
             users,
@@ -39,6 +49,37 @@ export class StatsController {
             safetyDepo,
             withdrawed
         });
+
+    }
+
+    @Get("getLastDeposits")
+    private async getLastDeposits(req: Request, res: Response) {
+
+        const deposits = await getRepository(Deposit).find({ where: { type: DepositType.INVEST, amount: MoreThan(99) }, order: { created: "DESC" }, take: 5, select: ["created", "amount", "transactionId"] });
+
+        const result = [];
+
+        for (const d of deposits) {
+
+            let entry = d as any;
+
+            if (d.transactionId && d.transactionId != "" && d.transactionId != " ") {
+                let t = await getRepository(Transaction).findOne({ id: d.transactionId });
+                if (!t) {
+                    t = await getRepository(CryptoTransaction).findOne({ id:d.transactionId });
+                }
+
+                entry.currency = t != null ? t.currency : "bitcoin";
+            } else {
+                entry.currency = "bitcoin";
+            }
+
+            delete entry.transactionId;
+
+            result.push(entry);
+        }
+
+        return res.send({ result });
 
     }
 

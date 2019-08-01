@@ -77,7 +77,7 @@ export class PayinPayout {
     }
 
     @Post("status")
-    private async status(req: Request, res: Response) {
+    private async status(req: any, res: Response) {
 
         let hash = md5(`4283#${req.body.orderId}#${req.body.paymentId}#${req.body.amount}#${req.body.phone}#${req.body.paymentStatus}#${req.bodypaymentDate}#md5("W53prbl4uC")`);
 

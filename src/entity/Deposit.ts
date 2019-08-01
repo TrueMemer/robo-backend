@@ -2,7 +2,8 @@ import { IsNotEmpty, Min, IsNumber } from "class-validator";
 import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, AfterInsert, getRepository, AfterUpdate } from "typeorm";
 import User from "./User";
 import Profit, { ProfitType } from "./Profit";
-import moment = require("moment");
+import moment = require("moment");
+
 
 export enum DepositStatus {
     PENDING,
@@ -58,7 +59,7 @@ export default class Deposit {
 
     @AfterInsert()
     public async calcucateBonus() {
-
+        /*
         const user = await getRepository(User).findOne(this.user_id);
 
         if (!user) { return; }
@@ -91,6 +92,7 @@ export default class Deposit {
         }
 
         await getRepository(User).save(user);
+        */
 
     }
 

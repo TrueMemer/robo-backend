@@ -54,7 +54,7 @@ export default class Deposit {
     })
     public pendingEndTime: Date;
 
-    @CreateDateColumn({ nullable: true, default: new Date(Date.now()) })
+    @Column({ default: new Date(Date.now()) })
     public created: Date;
 
     @AfterInsert()

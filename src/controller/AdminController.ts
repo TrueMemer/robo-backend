@@ -84,6 +84,15 @@ export class AdminController {
 										.andWhere("type != '6'")
 										.getRawOne() || {}).roboProfit || 0;
 
+			let withdraws = (await getRepository(Withdrawal)
+							.createQueryBuilder("withdrawal")
+							.select("sum(amount)", "withdraws")
+							.where("status = '1'")
+							.andWhere("type = '0'")
+							.andWhere(`created > :first`, { first })
+							.andWhere(`created < :end`, { end })
+							.getRawOne() || {}).withdraws || 0;
+
 			let userProfits = (await getRepository(Profit)
 										.createQueryBuilder("profit")
 										.select("sum(profit)", "userProfits")
@@ -94,14 +103,7 @@ export class AdminController {
 										.andWhere(`date < :end`, { end })
 										.getRawOne() || {}).userProfits || 0;
 
-			let withdraws = (await getRepository(Withdrawal)
-										.createQueryBuilder("withdrawal")
-										.select("sum(amount)", "withdraws")
-										.where("status = '1'")
-										.andWhere("type = '0'")
-										.andWhere(`created > :first`, { first })
-										.andWhere(`created < :end`, { end })
-										.getRawOne() || {}).withdraws || 0;
+			userProfits -= withdraws + reinvestedTotal;
 
 			if (prevMonth) {
 				investedTotal += result[prevMonth].invested.total || 0;
@@ -114,7 +116,7 @@ export class AdminController {
 
 			let safetyDepo = (10 / 100) * roboProfit;
 
-			let ourProfit = balance - (investedTotal + reinvestedTotal + userProfits + safetyDepo + withdraws);
+			let ourProfit = balance - (investedTotal + userProfits + safetyDepo + withdraws);
 
 			let obj: any = {
 					invested: {

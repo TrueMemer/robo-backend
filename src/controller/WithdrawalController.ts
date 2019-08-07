@@ -44,10 +44,11 @@ export class WithdrawalController {
                             .createQueryBuilder("withdrawal")
                             .select("sum(amount)", "pendingWithdraws")
                             .where("status = '0'")
+                            .andWhere("user_id = :id", { id: user.id })
                             .andWhere("type = '0'")
                             .getRawOne();
 
-        if (amount > user.getFreeDeposit() + pendingWithdraws || amount <= 0) {
+        if (amount > (await user.getFreeDeposit()) + (pendingWithdraws || 0) || amount <= 0) {
             return res.status(400).send({
                 msg: "Insufficient balance",
                 code: 400
@@ -335,6 +336,15 @@ export class WithdrawalController {
                 code: 404
             });
         }
+
+        const userBalance = await user.getFreeDeposit();
+
+        if (transaction.amount_usd > userBalance) {
+            return res.status(401).send({
+                msg: "Insufficient balance",
+                code: 401
+            });
+        } 
 
         let status = true;
 

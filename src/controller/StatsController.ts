@@ -9,7 +9,8 @@ import { BestchangeIds } from "../helpers/BestchangeIds";
 import CryptoTransaction from "../entity/CryptoTransaction";
 
 import Transaction from "../entity/Transaction";
-import Withdrawal from "../entity/Withdrawal";
+import Withdrawal from "../entity/Withdrawal";
+
 
 
 @Controller("api/stats")
@@ -55,7 +56,7 @@ export class StatsController {
     @Get("getLastDeposits")
     private async getLastDeposits(req: Request, res: Response) {
 
-        const deposits = await getRepository(Deposit).find({ where: { type: DepositType.INVEST, amount: MoreThan(99) }, order: { created: "DESC" }, take: 5, select: ["created", "amount", "transactionId"] });
+        const deposits = await getRepository(Deposit).find({ where: { type: DepositType.INVEST, amount: MoreThan(99) }, order: { created: "DESC" }, take: 5, select: ["created", "amount", "transactionId", "user_id"] });
 
         const result = [];
 
@@ -72,6 +73,12 @@ export class StatsController {
                 entry.currency = t != null ? t.currency : "bitcoin";
             } else {
                 entry.currency = "bitcoin";
+            }
+
+            const user = await getRepository(User).findOne(d.user_id);
+            if (user) {
+                const username = user.username;
+                entry.username = username.slice(0, 2) + "******" + username.slice(-2);
             }
 
             delete entry.transactionId;

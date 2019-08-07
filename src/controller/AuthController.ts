@@ -90,7 +90,7 @@ export class AuthController {
         const userRepository = getRepository(User);
         let user: User;
         try {
-            user = await userRepository.findOneOrFail(id);
+            user = await userRepository.findOneOrFail({ where: { id }, select: ["id", "password"] });
         } catch (id) {
             return res.status(401).send({
                 msg: "Unauthorized (expired token)",
@@ -122,7 +122,7 @@ export class AuthController {
         }
 
         user.password = newPassword;
-        const errors = await validate(user);
+        const errors = await validate(user, { skipMissingProperties: true });
         if (errors.length > 0) {
             return res.status(400).send({
                 msg: "Validation error" ,

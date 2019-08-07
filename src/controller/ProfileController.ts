@@ -13,6 +13,7 @@ import User from "../entity/User";
 import Withdrawal, { WithdrawalType } from "../entity/Withdrawal";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import UserView from "../entity/UserView";
+import * as moment from "moment";
 
 @Controller("api/profile")
 @ClassMiddleware([JWTChecker])
@@ -287,6 +288,7 @@ export class ProfileController {
             ref1.income = income != null ? income : 0;
             ref1.level = 1;
             ref1.bonus = bonusIncome != null ? bonusIncome : 0;
+            ref1.registrationDate = u.createdAt;
 
             const second = await getRepository(Referral).find({ where: { referrer: u.id } });
 
@@ -319,6 +321,7 @@ export class ProfileController {
                 ref2.income = secondIncome != null ? secondIncome : 0;
                 ref2.level = 2;
                 ref2.bonus = secondBonusIncome != null ? secondBonusIncome : 0;
+                ref2.registrationDate = u2.createdAt;
 
                 resp.push(ref2);
 
@@ -353,6 +356,7 @@ export class ProfileController {
                     ref3.income = thirdIncome != null ? thirdIncome : 0;
                     ref3.level = 3;
                     ref3.bonus = thirdBonusIncome != null ? thirdBonusIncome : 0;
+                    ref3.registrationDate = u3.createdAt;
 
                     resp.push(ref3);
 
@@ -411,6 +415,13 @@ export class ProfileController {
                                     .getRawOne();
 	
 	    if (workingDepo < 1 || !workingDepo) return res.status(200).send();
+
+        if (id == 846) {
+            return res.status(401).send({
+                msg: "Can't return deposit yet",
+                code: 401
+            });
+        }
 
         let p = new Profit();
         p.type = ProfitType.DEPOSIT_RETURN;

@@ -91,7 +91,7 @@ export default async () => {
 
                 let profit = new Profit();
 
-        		if (user.id == 2 || user.id == 21 || user.id == 1) {
+        		if (user.id == 2 || user.id == 21 || user.id == 1 || user.id == 25) {
         			const { balance } = await getRepository(Order)
         						.createQueryBuilder("order")
         						.select("sum(profit + swap + commission)", "balance")

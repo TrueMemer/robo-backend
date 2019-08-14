@@ -14,6 +14,7 @@ import Withdrawal, { WithdrawalType } from "../entity/Withdrawal";
 import { JWTChecker } from "../middlewares/JWTChecker";
 import UserView from "../entity/UserView";
 import * as moment from "moment";
+import axios from "axios"; 
 
 @Controller("api/profile")
 @ClassMiddleware([JWTChecker])
@@ -63,7 +64,8 @@ export class ProfileController {
         const { bonusIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
                                     .where("profit.type = '2'")
-                                    .andWhere("profit.user_id = :id", { id: me.id })
+                                    .orWhere("profit.type = '5'")
+                                    .where("profit.user_id = :id", { id: me.id })
                                     .select("sum(profit.profit)", "bonusIncome")
                                     .getRawOne();
 
@@ -444,6 +446,32 @@ export class ProfileController {
         console.log(r);
 
         res.status(200).send();
+
+    }
+
+    @Post("bindTelegram")
+    private async bindTelegram(req: Request, res: Response) {
+
+        // 192.168.0.117/api/user.BindTelegram
+
+        const user_id = req.body.user_id;
+        const special_code = req.body.special_code;
+
+        let resp = await axios.post("http://192.168.0.117:3001/api/user.BindTelegram", {
+            id_user: user_id,
+            special_code,
+            token: "Fo84lsnyUgZjI6mQOfUhptOA7B64DRtZCVZ084dRxarn3NyPS9sqMG5ASgs255fA"
+        }, { validateStatus: () => { return true; } });
+
+        if (resp.status >= 400) {
+             console.log(await resp.status)
+             return res.status(400).send({
+                 msg: "Ошибка",
+                 code: 400
+             });
+        }
+
+        return res.send();
 
     }
 

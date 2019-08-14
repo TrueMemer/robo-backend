@@ -6,6 +6,7 @@ import Profit, { ProfitType } from "../entity/Profit";
 import { ShopEntry, ShopEntryType } from "../entity/ShopEntry";
 import User from "../entity/User";
 import { JWTChecker } from "../middlewares/JWTChecker";
+import { RoleChecker } from "../middlewares/RoleChecker";
 
 @Controller("api/shop")
 export class ShopController {
@@ -13,6 +14,32 @@ export class ShopController {
     private chance = 10;
     private bet = 200;
     private bank = ((this.bet * this.chance) / 100) + 1;
+
+    @Get("getChances")
+    @Middleware([JWTChecker, RoleChecker(["ADMIN"])])
+    private async getChances(req: Request, res: Response) {
+        return res.send({
+            chance: this.chance,
+            bet: this.bet,
+            bank: this.bank
+        });
+    }
+
+    @Post("changeChanceAndBet")
+    @Middleware([JWTChecker, RoleChecker(["ADMIN"])])
+    private async changeChance(req: Request, res: Response) {
+
+        if (req.body.chance) {
+            this.chance = req.body.chance;
+        }
+
+        if (req.body.bet) {
+            this.chance = req.body.chance;
+        }
+
+        return res.send();
+
+    }
 
     @Get("feedRobo")
     @Middleware([JWTChecker])
@@ -64,7 +91,7 @@ export class ShopController {
         if (award > 0) {
             let a = new Profit();
             a.profit = award;
-            a.type = ProfitType.BONUS;
+            a.type = ProfitType.BONUS_FEEDROBO;
             a.user_id = user.id;
             a.date = new Date(Date.now());
 
@@ -102,7 +129,8 @@ export class ShopController {
         const { bonuses } = await getRepository(Profit)
                                 .createQueryBuilder("profit")
                                 .where("profit.user_id = :id", { id: user.id })
-                                .andWhere("profit.type = '2'")
+                                .where("profit.type = '2'")
+                                .orWhere("profit.type = '5'")
                                 .select("sum(profit.profit)", "bonuses")
                                 .getRawOne();
 

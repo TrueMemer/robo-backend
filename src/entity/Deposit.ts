@@ -3,6 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, AfterInsert, 
 import User from "./User";
 import Profit, { ProfitType } from "./Profit";
 import moment = require("moment");
+import axios from "axios";
 
 
 export enum DepositStatus {
@@ -56,6 +57,11 @@ export default class Deposit {
 
     @Column({ default: new Date(Date.now()) })
     public created: Date;
+
+    @AfterInsert()
+    private async sendToTelegram() {
+
+    }
 
     @AfterInsert()
     public async calcucateBonus() {

@@ -14,7 +14,11 @@ import Withdrawal from "../entity/Withdrawal";
 import { validate } from "class-validator";
 import recalculateProfits from "../cron/recalculateProfits";
 import moment = require("moment");
-
+import axios from "axios";
+import qs = require("qs");
+import config from "../config/config";
+import * as blockio from "block_io";
+import { load as htmlLoad } from "cheerio";
 
 @Controller("api/cp")
 @ClassMiddleware([JWTChecker, RoleChecker(["ADMIN"])])
@@ -544,6 +548,108 @@ export class AdminController {
 							.getMany();
 
 		//return res.send(withdraws);
+
+	}
+
+	@Get("bonusStats")
+	private async bonusStats(req: Request, res: Response) {
+
+		const feedCount = (await getRepository(Profit)
+							.createQueryBuilder("profit")
+							.select("count(*)", "feedCount")
+							.where("profit.type = '3'")
+							.getRawOne() || {}).feedCount || 0;
+
+		const feedAwards = (await getRepository(Profit)
+							.createQueryBuilder("profit")
+							.select("sum(profit)", "feedAwards")
+							.where("profit.type = '5'")
+							.getRawOne()).feedAwards;
+
+		const exchangedTotal = (await getRepository(Profit)
+								.createQueryBuilder("profit")
+								.select("sum(profit)", "exchangedTotal")
+								.where("profit.profit < 0")
+								.andWhere("profit.type = '2'")
+								.getRawOne() || {}).exchangedTotal || 0;
+
+		const exchangedToMoney = (await getRepository(Profit)
+									.createQueryBuilder("profit")
+									.select("sum(profit)", "exchangedToMoney")
+									.where("profit.type = '3'")
+									.andWhere("profit.profit > 0")
+									.getRawOne() || {}).exchangedToMoney || 0;
+
+		const ourProfit = feedCount - exchangedToMoney;
+
+		return res.send({
+			feedCount: parseInt(feedCount),
+			feedAwards,
+			exchangedTotal: Math.abs(exchangedTotal),
+			exchangedToMoney,
+			ourProfit
+		});
+
+	}
+
+	@Get("paymentBalances")
+	private async paymentBalances(req: Request, res: Response) {
+
+		const obj: any = {};
+
+		try {
+
+			let r = await axios.post("https://payeer.com/ajax/api/api.php", qs.stringify({
+				account: config.payeer.account_id,
+				apiId: config.payeer.api_id,
+				apiPass: config.payeer.secret_key,
+				action: "balance"
+			}));
+
+			console.log(await r.data);
+
+			obj.payeer = await r.data.balance.USD.BUDGET;
+
+			obj.bitcoin = await new Promise((resolve, reject) => {
+				let bitcoin_io = new blockio(config.blockio.api_keys.bitcoin, config.blockio.pin);
+				bitcoin_io.get_balance((err, data) => {
+					if (err) reject(err);
+					else resolve(data.data.available_balance);
+				});
+			});
+
+			obj.litecoin = await new Promise((resolve, reject) => {
+				let bitcoin_io = new blockio(config.blockio.api_keys.litecoin, config.blockio.pin);
+				bitcoin_io.get_balance((err, data) => {
+					if (err) reject(err);
+					else resolve(data.data.available_balance);
+				});
+			});
+
+			obj.dogecoin = await new Promise((resolve, reject) => {
+				let bitcoin_io = new blockio(config.blockio.api_keys.dogecoin, config.blockio.pin);
+				bitcoin_io.get_balance((err, data) => {
+					if (err) reject(err);
+					else resolve(data.data.available_balance);
+				});
+			});
+
+            r = await axios.get("https://perfectmoney.is/acct/balance.asp", {
+                params: {
+                    AccountID: config.perfect_money.account_id,
+                    PassPhrase: config.perfect_money.password,
+                }
+            });
+
+
+            const $ = htmlLoad(await r.data);
+            obj.perfectmoney = $("input")[0].attribs.value;
+
+		} catch (e) {
+			console.log(e);
+		}
+
+		res.send(obj);
 
 	}
 

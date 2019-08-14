@@ -5,7 +5,8 @@ export enum ProfitType {
     REFERRALS,
     BONUS,
     OTHER,
-    DEPOSIT_RETURN
+    DEPOSIT_RETURN,
+    BONUS_FEEDROBO
 }
 
 @Entity()
@@ -19,6 +20,9 @@ export default class Profit {
 
     @Column({ type: "float" })
     public profit: number;
+
+    @Column({ type: "float", nullable: true })
+    public open_balance: number;
 
     @Column({ nullable: true })
     public ticket: number;

@@ -4,6 +4,7 @@ import Deposit, { DepositStatus } from "../entity/Deposit";
 import Order from "../entity/Order";
 import Profit, { ProfitType } from "../entity/Profit";
 import User from "../entity/User";
+import axios from "axios";
 
 export const ReferralProfits = [
     [0.25, 0.25],
@@ -19,6 +20,8 @@ export default async () => {
 
     const users: User[] = await getRepository(User).find();
     Logger.Imp("Recalculate profits begin");
+
+    let userProfits = [];
 
     for (const user of users) {
 
@@ -103,6 +106,7 @@ export default async () => {
 
                 profit.user_id = user.id;
                 profit.ticket = order.ticket;
+                profit.open_balance = order.open_balance;
                 profit.depositFactor = workingDepo / order.open_balance;
                 profit.workingDeposit = workingDepo;
                 profit.profit = ((order.profit + order.swap) * profit.depositFactor) / 2;
@@ -110,6 +114,8 @@ export default async () => {
 		        profit.date = order.close_time;
 
                 profit = await getRepository(Profit).save(profit);
+
+                userProfits.push(profit);
 
                 if (user.referral) {
                     const referrer = await getRepository(User).findOne({ where: { username: user.referral } });
@@ -121,12 +127,15 @@ export default async () => {
                         p1.type = ProfitType.REFERRALS;
                         p1.referral_id = user.id;
                         p1.ticket = order.ticket;
+                        p1.open_balance = order.open_balance;
                         p1.profit = (ReferralProfits[referrer.referral_level][0] / 100) * profit.profit;
                         p1.user_id = referrer.id;
                         p1.referral_level = 1;
 			            p1.date = order.close_time;
 
                         p1 = await getRepository(Profit).save(p1);
+
+                        userProfits.push(p1);
 
                         if (referrer.referral) {
 
@@ -140,12 +149,15 @@ export default async () => {
                                 p2.type = ProfitType.REFERRALS;
                                 p2.referral_id = user.id;
                                 p2.ticket = order.ticket;
+                                p2.open_balance = order.open_balance;
                                 p2.profit = (ReferralProfits[referrer2.referral_level][1] / 100) * profit.profit;
                                 p2.user_id = referrer2.id;
                                 p2.referral_level = 2;
 				                p2.date = order.close_time;
 
                                 p2 = await getRepository(Profit).save(p2);
+
+                                userProfits.push(p2);
                             }
 
                             if (referrer2.referral) {
@@ -160,12 +172,15 @@ export default async () => {
                                     p3.type = ProfitType.REFERRALS;
                                     p3.referral_id = user.id;
                                     p3.ticket = order.ticket;
+                                    p3.open_balance = order.open_balance;
                                     p3.profit = (ReferralProfits[referrer3.referral_level][1] / 100) * profit.profit;
                                     p3.user_id = referrer2.id;
                                     p3.referral_level = 3;
 				                    p3.date = order.close_time;
 
                                     p3 = await getRepository(Profit).save(p3);
+
+                                    userProfits.push(p3);
                                 }
                             }
                         }
@@ -179,9 +194,21 @@ export default async () => {
         user.updateBalance();
         user.updateDeposits();
 
+
         await getRepository(User).save(user);
 
 
+    }
+
+    if (userProfits.length != 0) {
+        const r = await axios({
+            method: "post",
+            url: "http://localhost:3001/api/chat.ProfitNotification?token=Fo84lsnyUgZjI6mQOfUhptOA7B64DRtZCVZ084dRxarn3NyPS9sqMG5ASgs255fA",
+            data: {
+                token: "Fo84lsnyUgZjI6mQOfUhptOA7B64DRtZCVZ084dRxarn3NyPS9sqMG5ASgs255fA",
+                data: userProfits
+            }
+        });
     }
 
 };

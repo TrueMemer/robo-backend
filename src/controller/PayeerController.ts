@@ -48,6 +48,8 @@ export class PayeerController {
 
         deposit = await getRepository(Deposit).save(deposit);
 
+        Deposit.sendToTelegram(deposit);
+
         return res.send(req.body.order_id + "|success");
     }
 

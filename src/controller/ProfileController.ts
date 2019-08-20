@@ -64,8 +64,7 @@ export class ProfileController {
         const { bonusIncome } = await getRepository(Profit)
                                     .createQueryBuilder("profit")
                                     .where("profit.type = '2'")
-                                    .orWhere("profit.type = '5'")
-                                    .where("profit.user_id = :id", { id: me.id })
+                                    .andWhere("profit.user_id = :id", { id: me.id })
                                     .select("sum(profit.profit)", "bonusIncome")
                                     .getRawOne();
 
@@ -79,7 +78,7 @@ export class ProfileController {
         me.withdrawedTotal = sum != null ? sum : 0;
         me.freeDeposit = await me.getFreeDeposit();
         me.balance = me.freeDeposit + me.workingDeposit + me.pendingDeposit;
-        me.bonus = (bonusIncome != null ? bonusIncome : 0) - (bonusWithdrawed != null ? bonusWithdrawed : 0);
+        me.bonus = bonusIncome != null ? bonusIncome : 0;
         me.workingDeposit = await me.getWorkingDepo();
 
         res.send(me);

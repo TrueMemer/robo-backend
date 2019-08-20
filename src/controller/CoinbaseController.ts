@@ -140,8 +140,10 @@ export class CoinbaseController {
                 d.type = DepositType.INVEST;
                 d.user_id = t.user_id;
 
-                await getRepository(Deposit).save(d);
- 
+                d = await getRepository(Deposit).save(d);
+
+                Deposit.sendToTelegram(d);
+
             } break;
             case "charge:failed": {
 

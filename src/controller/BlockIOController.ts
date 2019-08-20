@@ -177,6 +177,8 @@ export class BlockIOController {
 
         deposit = await getRepository(Deposit).save(deposit);
 
+        Deposit.sendToTelegram(deposit);
+
         user.payedAllTime += p.amount_usd;
         user.updateDeposits();
         user.updateBalance();

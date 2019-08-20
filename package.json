@@ -4,6 +4,7 @@
    "description": "ROBO FX TRADING backend",
    "devDependencies": {
       "@types/request": "^2.48.2",
+      "nodemon": "^1.19.1",
       "rimraf": "^2.6.3",
       "ts-node": "3.3.0",
       "tslint": "^5.17.0"

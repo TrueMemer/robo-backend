@@ -44,6 +44,8 @@ export class PerfectMoneyController {
 
         deposit = await getRepository(Deposit).save(deposit);
 
+        Deposit.sendToTelegram(deposit);
+
         res.send(200);
     }
 

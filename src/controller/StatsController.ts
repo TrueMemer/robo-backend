@@ -1,17 +1,15 @@
 import { Controller, Get } from "@overnightjs/core";
 import { Request, Response } from "express-serve-static-core";
+import * as bestchange from "node-bestchange";
 import { getRepository, LessThan, MoreThan } from "typeorm";
+import CryptoTransaction from "../entity/CryptoTransaction";
 import Deposit, { DepositType } from "../entity/Deposit";
 import Order from "../entity/Order";
 import User from "../entity/User";
-import * as bestchange from "node-bestchange";
 import { BestchangeIds } from "../helpers/BestchangeIds";
-import CryptoTransaction from "../entity/CryptoTransaction";
 
 import Transaction from "../entity/Transaction";
 import Withdrawal from "../entity/Withdrawal";
-
-
 
 @Controller("api/stats")
 export class StatsController {
@@ -21,27 +19,30 @@ export class StatsController {
 
         const users = await getRepository(User).count();
         const orders = await getRepository(Order).find(
-            { order: { close_time: "DESC" } });
-        const balance = orders[0].close_balance;
-        const { deposited } = await getRepository(Deposit)
+            { order: { close_time: "DESC" }, take: 1 });
+        let balance = 0;
+        if (orders != null && orders.length !== 0) {
+            balance = orders[0].close_balance;
+        }
+        const deposited = (await getRepository(Deposit)
                                 .createQueryBuilder("deposit")
                                 .select("sum(deposit.amount)", "deposited")
-                                .getRawOne();
+                                .getRawOne() || {}).deposited || 0;
 
-        const { ordersTotal } = await getRepository(Order)
+        const ordersTotal = (await getRepository(Order)
                                     .createQueryBuilder("order")
                                     .select("sum(order.profit + order.swap)", "ordersTotal")
                                     .where("order.type != '6'")
-                                    .getRawOne();
+                                    .getRawOne() || {}).ordersTotal || 0;
 
-        const safetyDepo = ordersTotal != null ? (10 / 100) * ordersTotal : 0;
+        const safetyDepo = (10 / 100) * ordersTotal;
 
-       const { withdrawed } = await getRepository(Withdrawal)
+        const withdrawed = (await getRepository(Withdrawal)
                        .createQueryBuilder("withdrawal")
                        .select("sum(amount)", "withdrawed")
                        .where("status = '1'")
                        .andWhere("type = '0'")
-                       .getRawOne();
+                       .getRawOne() || {}).withdrawed || 0;
 
         return res.status(200).send({
             users,
@@ -56,18 +57,23 @@ export class StatsController {
     @Get("getLastDeposits")
     private async getLastDeposits(req: Request, res: Response) {
 
-        const deposits = await getRepository(Deposit).find({ where: { type: DepositType.INVEST, amount: MoreThan(99) }, order: { created: "DESC" }, take: 5, select: ["created", "amount", "transactionId", "user_id"] });
+        const deposits = await getRepository(Deposit).find({
+            where: { type: DepositType.INVEST, amount: MoreThan(99) },
+            order: { created: "DESC" },
+            take: 5,
+            select: ["created", "amount", "transactionId", "user_id"]
+        });
 
         const result = [];
 
         for (const d of deposits) {
 
-            let entry = d as any;
+            const entry = d as any;
 
             if (d.transactionId && d.transactionId != "" && d.transactionId != " ") {
                 let t = await getRepository(Transaction).findOne({ id: d.transactionId });
                 if (!t) {
-                    t = await getRepository(CryptoTransaction).findOne({ id:d.transactionId });
+                    t = await getRepository(CryptoTransaction).findOne({ id: d.transactionId });
                 }
 
                 entry.currency = t != null ? t.currency : "bitcoin";
@@ -99,7 +105,7 @@ export class StatsController {
         const sortRecieve = (a, b) => b.rateReceive - a.rateReceive;
         const sortGive = (a, b) => a.rateGive - b.rateGive;
 
-        let result = {
+        const result = {
             bitcoin: {
                 name: "BTC",
                 buy: rates.filter(BestchangeIds.bitcoin, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateReceive,
@@ -124,7 +130,7 @@ export class StatsController {
                 name: "DOGE",
                 buy: rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateReceive
                     / rates.filter(BestchangeIds.dogecoin, BestchangeIds.visa_usd).sort(sortRecieve)[0].rateGive,
-                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin).sort(sortGive)[0].rateGive 
+                sell: rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin).sort(sortGive)[0].rateGive
                     / rates.filter(BestchangeIds.visa_usd, BestchangeIds.dogecoin).sort(sortGive)[0].rateReceive
             }
         };

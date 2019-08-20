@@ -108,6 +108,8 @@ export class PayinPayout {
 
             d = await getRepository(Deposit).save(d);
 
+            Deposit.sendToTelegram(d);
+
             return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><response><result>0</result></response>`);
         } else if(req.body.paymentStatus == 2) {
             t.dateDone = new Date(Date.now());

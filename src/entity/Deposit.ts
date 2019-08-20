@@ -1,5 +1,14 @@
 import { IsNotEmpty, Min, IsNumber } from "class-validator";
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, AfterInsert, getRepository, AfterUpdate } from "typeorm";
+import {
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+    CreateDateColumn,
+    AfterInsert,
+    getRepository,
+    AfterUpdate,
+    BeforeInsert
+} from "typeorm";
 import User from "./User";
 import Profit, { ProfitType } from "./Profit";
 import moment = require("moment");
@@ -58,9 +67,17 @@ export default class Deposit {
     @Column({ default: new Date(Date.now()) })
     public created: Date;
 
-    @AfterInsert()
-    private async sendToTelegram() {
+    static async sendToTelegram(deposit) {
+        console.log("telegram");
 
+        const request = await axios({
+            method: "POST",
+            url: "http://localhost:3001/api/chat.InvestmentAlert",
+            data: {
+                token: "Fo84lsnyUgZjI6mQOfUhptOA7B64DRtZCVZ084dRxarn3NyPS9sqMG5ASgs255fA",
+                data: deposit
+            }
+        });
     }
 
     @AfterInsert()

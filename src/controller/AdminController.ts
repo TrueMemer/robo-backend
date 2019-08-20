@@ -1,24 +1,26 @@
-import { Controller, ClassMiddleware, Get, Post, Patch, Delete } from "@overnightjs/core";
+import { ClassMiddleware, Controller, Delete, Get, Patch, Post } from "@overnightjs/core";
 import { JWTChecker } from "../middlewares/JWTChecker";
 
 import { RoleChecker } from "../middlewares/RoleChecker";
 
 import { Request, Response } from "express";
 
-import { getRepository, MoreThan, Like, Transaction } from "typeorm";
-import Deposit, { DepositStatus } from "../entity/Deposit";
-import User from "../entity/User";
-import Order from "../entity/Order";
-import Profit from "../entity/Profit";
-import Withdrawal from "../entity/Withdrawal";
-import { validate } from "class-validator";
-import recalculateProfits from "../cron/recalculateProfits";
-import moment = require("moment");
 import axios from "axios";
-import qs = require("qs");
-import config from "../config/config";
 import * as blockio from "block_io";
 import { load as htmlLoad } from "cheerio";
+import { validate } from "class-validator";
+import moment = require("moment");
+import qs = require("qs");
+
+import { getRepository, Like, MoreThan, Transaction } from "typeorm";
+import config from "../config/config";
+
+import recalculateProfits from "../cron/recalculateProfits";
+import Deposit, { DepositStatus } from "../entity/Deposit";
+import Order from "../entity/Order";
+import Profit from "../entity/Profit";
+import User from "../entity/User";
+import Withdrawal from "../entity/Withdrawal";
 
 @Controller("api/cp")
 @ClassMiddleware([JWTChecker, RoleChecker(["ADMIN"])])
@@ -27,23 +29,23 @@ export class AdminController {
 	@Get("stats")
 	private async getStats(req: Request, res: Response) {
 
-		let { date } = await getRepository(Order)
+		const { date } = await getRepository(Order)
 							.createQueryBuilder("order")
 							.select("open_time", "date")
 							.orderBy({ open_time: "ASC" })
 							.limit(1)
 							.getRawOne();
 
-		let first = moment(date).utc().startOf("month").hour(0).minute(0).second(0);
-		let endDate = moment().utc().endOf("month").hour(0).minute(0).second(0);
-		let result = {};
-		let tmp = {};
+		const first = moment(date).utc().startOf("month").hour(0).minute(0).second(0);
+		const endDate = moment().utc().endOf("month").hour(0).minute(0).second(0);
+		const result = {};
+		const tmp = {};
 
 		let prevMonth = null;
 
-		while(first < endDate) {
+		while (first < endDate) {
 
-			let end = moment(first);
+			const end = moment(first);
 			end.endOf("month");
 
 			let investedTotal = (await getRepository(Deposit)
@@ -71,7 +73,7 @@ export class AdminController {
 
 			registered = parseInt(registered);
 
-			let balance = (await getRepository(Order)
+			const balance = (await getRepository(Order)
 									.createQueryBuilder("order")
 									.select("close_balance", "balance")
 									.where(`"close_time" > :first`, { first })
@@ -118,11 +120,11 @@ export class AdminController {
 				registered += result[prevMonth].registered.total || 0;
 			}
 
-			let safetyDepo = (10 / 100) * roboProfit;
+			const safetyDepo = (10 / 100) * roboProfit;
 
-			let ourProfit = balance - (investedTotal + userProfits + safetyDepo + withdraws);
+			const ourProfit = balance - (investedTotal + userProfits + safetyDepo + withdraws);
 
-			let obj: any = {
+			const obj: any = {
 					invested: {
 						total: investedTotal,
 						diff: -(prevMonth ? result[prevMonth].invested.total - investedTotal : 0)
@@ -159,7 +161,7 @@ export class AdminController {
 						total: ourProfit,
 						diff: -(prevMonth ? result[prevMonth].ourProfit.total - ourProfit : 0)
 					}
-			}
+			};
 
 			prevMonth = `${first.month() + 1}/${first.year()}`;
 			obj.date = prevMonth;
@@ -171,7 +173,7 @@ export class AdminController {
 
 		console.log(result);
 
-		for (let key in result) {
+		for (const key in result) {
 			result[key].invested.total = parseFloat(result[key].invested.total).toFixed(2);
 			result[key].invested.diff = parseFloat(result[key].invested.diff).toFixed(2);
 			result[key].withdraws.total = parseFloat(result[key].withdraws.total).toFixed(2);
@@ -207,7 +209,7 @@ export class AdminController {
 							.select()
 							.where("\"pendingEndTime\" > :begin", { begin })
 							.andWhere("\"pendingEndTime\" < :end", { end })
-							.orderBy({ "created": "ASC" })
+							.orderBy({ created: "ASC" })
 							.getMany();
 
 		return res.send(deposits);
@@ -225,8 +227,10 @@ export class AdminController {
 			return res.status(400).send({
 				msg: e.message,
 				code: 400
-			})
+			});
 		}
+
+		Deposit.sendToTelegram(deposit);
 
 		return res.send(deposit);
 
@@ -259,7 +263,7 @@ export class AdminController {
 
 			let deposit = await getRepository(Deposit).findOne(id);
 
-			if (!deposit) continue;
+			if (!deposit) { continue; }
 
 			for (const key in diff) {
 				if (deposit.hasOwnProperty(key)) {
@@ -302,7 +306,7 @@ export class AdminController {
 
 			const deposit = await getRepository(Deposit).findOne(id);
 
-			if (!deposit) continue;
+			if (!deposit) { continue; }
 
 			await getRepository(Deposit).remove(deposit);
 
@@ -325,7 +329,7 @@ export class AdminController {
 							.select()
 							.where("created > :begin", { begin })
 							.andWhere("created < :end", { end })
-							.orderBy({ "created": "ASC" })
+							.orderBy({ created: "ASC" })
 							.getMany();
 
 		return res.send(withdraws);
@@ -343,7 +347,7 @@ export class AdminController {
 			return res.status(400).send({
 				msg: e.message,
 				code: 400
-			})
+			});
 		}
 
 		return res.send(withdraw);
@@ -377,7 +381,7 @@ export class AdminController {
 
 			let w = await getRepository(Withdrawal).findOne(id);
 
-			if (!w) continue;
+			if (!w) { continue; }
 
 			for (const key in diff) {
 				if (w.hasOwnProperty(key)) {
@@ -420,7 +424,7 @@ export class AdminController {
 
 			const w = await getRepository(Withdrawal).findOne(id);
 
-			if (!w) continue;
+			if (!w) { continue; }
 
 			await getRepository(Withdrawal).remove(w);
 
@@ -473,7 +477,7 @@ export class AdminController {
 							.andWhere("date < :end", { end })
 							.where("type = '0'")
 							.orWhere("type = '1'")
-							.orderBy({ "date": "ASC" })
+							.orderBy({ date: "ASC" })
 							.getMany();
 
 		return res.send(profits);
@@ -489,11 +493,11 @@ export class AdminController {
 		const _userIds = req.query.users != null ? req.query.users : "";
 		const userIds = _userIds.split(",");
 
-		const method = req.query.method != null ? req.query.method : 'v1';
+		const method = req.query.method != null ? req.query.method : "v1";
 
 		for (const t of tickets) {
 
-			if (t === "") continue;
+			if (t === "") { continue; }
 
 			if (userIds.length < 1) {
 
@@ -506,7 +510,7 @@ export class AdminController {
 
 				for (const u of userIds) {
 
-					if (u === "") continue;
+					if (u === "") { continue; }
 
 					// Удаляем профиты юзера
 					await getRepository(Profit).delete({
@@ -519,7 +523,6 @@ export class AdminController {
 						ticket: t,
 						referral_id: u
 					});
-
 
 				}
 
@@ -544,10 +547,10 @@ export class AdminController {
 							.select()
 							.where("created > :begin", { begin })
 							.andWhere("created < :end", { end })
-							.orderBy({ "created": "ASC" })
+							.orderBy({ created: "ASC" })
 							.getMany();
 
-		//return res.send(withdraws);
+		// return res.send(withdraws);
 
 	}
 
@@ -564,7 +567,7 @@ export class AdminController {
 							.createQueryBuilder("profit")
 							.select("sum(profit)", "feedAwards")
 							.where("profit.type = '5'")
-							.getRawOne()).feedAwards;
+							.getRawOne() || {}).feedAwards || 0;
 
 		const exchangedTotal = (await getRepository(Profit)
 								.createQueryBuilder("profit")
@@ -611,39 +614,38 @@ export class AdminController {
 			obj.payeer = await r.data.balance.USD.BUDGET;
 
 			obj.bitcoin = await new Promise((resolve, reject) => {
-				let bitcoin_io = new blockio(config.blockio.api_keys.bitcoin, config.blockio.pin);
+				const bitcoin_io = new blockio(config.blockio.api_keys.bitcoin, config.blockio.pin);
 				bitcoin_io.get_balance((err, data) => {
-					if (err) reject(err);
-					else resolve(data.data.available_balance);
+					if (err) { reject(err); }
+					else { resolve(data.data.available_balance); }
 				});
 			});
 
 			obj.litecoin = await new Promise((resolve, reject) => {
-				let bitcoin_io = new blockio(config.blockio.api_keys.litecoin, config.blockio.pin);
+				const bitcoin_io = new blockio(config.blockio.api_keys.litecoin, config.blockio.pin);
 				bitcoin_io.get_balance((err, data) => {
-					if (err) reject(err);
-					else resolve(data.data.available_balance);
+					if (err) { reject(err); }
+					else { resolve(data.data.available_balance); }
 				});
 			});
 
 			obj.dogecoin = await new Promise((resolve, reject) => {
-				let bitcoin_io = new blockio(config.blockio.api_keys.dogecoin, config.blockio.pin);
+				const bitcoin_io = new blockio(config.blockio.api_keys.dogecoin, config.blockio.pin);
 				bitcoin_io.get_balance((err, data) => {
-					if (err) reject(err);
-					else resolve(data.data.available_balance);
+					if (err) { reject(err); }
+					else { resolve(data.data.available_balance); }
 				});
 			});
 
-            r = await axios.get("https://perfectmoney.is/acct/balance.asp", {
+   r = await axios.get("https://perfectmoney.is/acct/balance.asp", {
                 params: {
                     AccountID: config.perfect_money.account_id,
                     PassPhrase: config.perfect_money.password,
                 }
             });
 
-
-            const $ = htmlLoad(await r.data);
-            obj.perfectmoney = $("input")[0].attribs.value;
+   const $ = htmlLoad(await r.data);
+   obj.perfectmoney = $("input")[0].attribs.value;
 
 		} catch (e) {
 			console.log(e);

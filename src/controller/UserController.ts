@@ -22,7 +22,14 @@ export default class UserController {
         const userRepository = getRepository(User);
         const users = await userRepository.find();
 
-        res.send(users);
+        return res.send(await Promise.all(users.map(async (x) => {
+            x.freeDeposit = await x.getFreeDeposit();
+            x.workingDeposit = await x.getWorkingDepo();
+
+            console.log(x.freeDeposit)
+
+            return x;
+        })));
     }
 
     @Get(":id([0-9]+)")

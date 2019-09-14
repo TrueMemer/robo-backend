@@ -598,7 +598,13 @@ export class AdminController {
 	@Get("paymentBalances")
 	private async paymentBalances(req: Request, res: Response) {
 
-		const obj: any = {};
+		const obj: any = {
+			payeer: { name: "Payeer", code: "$" },
+			dogecoin: { name: "Dogecoin", code: "DOGE" },
+			bitcoin: { name: "Bitcoin", code: "BTC" },
+			litecoin: { name: "Litecoin", code: "LTC" },
+			perfectmoney: { name: "Perfect Money", code: "$" }
+		};
 
 		try {
 
@@ -611,31 +617,35 @@ export class AdminController {
 
 			console.log(await r.data);
 
-			obj.payeer = await r.data.balance.USD.BUDGET;
+			obj.payeer.balance = await r.data.balance.USD.BUDGET;
+			obj.payeer.wallet = config.payeer.account_id;
 
-			obj.bitcoin = await new Promise((resolve, reject) => {
+			obj.bitcoin.balance = await new Promise((resolve, reject) => {
 				const bitcoin_io = new blockio(config.blockio.api_keys.bitcoin, config.blockio.pin);
 				bitcoin_io.get_balance((err, data) => {
 					if (err) { reject(err); }
 					else { resolve(data.data.available_balance); }
 				});
 			});
+			obj.bitcoin.wallet = "3Q6LNbDirvUTeMRUhJquyEK2b9EMJP7RTe";
 
-			obj.litecoin = await new Promise((resolve, reject) => {
+			obj.litecoin.balance = await new Promise((resolve, reject) => {
 				const bitcoin_io = new blockio(config.blockio.api_keys.litecoin, config.blockio.pin);
 				bitcoin_io.get_balance((err, data) => {
 					if (err) { reject(err); }
 					else { resolve(data.data.available_balance); }
 				});
 			});
+			obj.litecoin.wallet = "32Hyhtg4guXJ7vs4ar3B7DgLGeXJUDxBXH";
 
-			obj.dogecoin = await new Promise((resolve, reject) => {
+			obj.dogecoin.balance = await new Promise((resolve, reject) => {
 				const bitcoin_io = new blockio(config.blockio.api_keys.dogecoin, config.blockio.pin);
 				bitcoin_io.get_balance((err, data) => {
 					if (err) { reject(err); }
 					else { resolve(data.data.available_balance); }
 				});
 			});
+			obj.dogecoin.wallet = "9tLuqcVrWeUPjQJ6BeoaG6Pq4p6Bi47syp";
 
    r = await axios.get("https://perfectmoney.is/acct/balance.asp", {
                 params: {
@@ -645,7 +655,8 @@ export class AdminController {
             });
 
    const $ = htmlLoad(await r.data);
-   obj.perfectmoney = $("input")[0].attribs.value;
+   obj.perfectmoney.balance = $("input")[0].attribs.value;
+   obj.perfectmoney.wallet = config.perfect_money.payer_wallet;
 
 		} catch (e) {
 			console.log(e);
